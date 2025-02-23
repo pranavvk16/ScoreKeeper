@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { Trophy, Home, User } from "lucide-react";
+import { ThemeToggle } from "./theme-toggle";
 
 export function Navbar() {
   return (
@@ -12,7 +13,7 @@ export function Navbar() {
               <span>ScoreKeeper</span>
             </a>
           </Link>
-          
+
           <div className="flex items-center space-x-6">
             <Link href="/">
               <a className="flex items-center space-x-1 text-sm font-medium">
@@ -32,6 +33,7 @@ export function Navbar() {
                 <span>Profile</span>
               </a>
             </Link>
+            <ThemeToggle />
           </div>
         </div>
       </div>
