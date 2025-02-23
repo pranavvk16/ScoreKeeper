@@ -33,6 +33,37 @@ export default function GamePage() {
     queryKey: [`/api/games/${gameId}`]
   });
 
+  const { data: existingSession } = useQuery<GameSession>({
+    queryKey: [`/api/sessions/${gameId}`],
+    enabled: !!gameId,
+  });
+
+  useEffect(() => {
+    if (existingSession) {
+      setGameSession(existingSession);
+      // Fetch current players and scores
+      apiRequest("GET", `/api/sessions/${existingSession.id}/scores`)
+        .then(res => res.json())
+        .then(scores => {
+          const playerMap = new Map<number, Player>();
+          scores.forEach((score: Score) => {
+            if (!playerMap.has(score.playerId)) {
+              playerMap.set(score.playerId, {
+                id: score.playerId,
+                name: `Player ${score.playerId}`,
+                scores: [],
+                total: 0
+              });
+            }
+            const player = playerMap.get(score.playerId)!;
+            player.scores.push(score.score);
+            player.total += score.score;
+          });
+          setPlayers(Array.from(playerMap.values()));
+        });
+    }
+  }, [existingSession]);
+
   const createSessionMutation = useMutation({
     mutationFn: async (playerNames: string[]) => {
       const response = await apiRequest("POST", "/api/sessions", {
