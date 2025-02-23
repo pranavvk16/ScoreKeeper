@@ -228,15 +228,15 @@ export class MemStorage implements IStorage {
 }
 
 export const storage = new MemStorage();
-  // async getUserGameHistory(userId: number) {
-  //   const sessions = await db.query.gameSessions.findMany({
-  //     with: {
-  //       game: true,
-  //       scores: {
-  //         where: (scores, { eq }) => eq(scores.playerId, userId)
-  //       }
-  //     },
-  //     orderBy: (sessions, { desc }) => [desc(sessions.startTime)]
-  //   });
-  //   return sessions;
-  // }
+  async getUserGameHistory(userId: number) {
+    const sessions = await db.query.gameSessions.findMany({
+      with: {
+        game: true,
+        scores: {
+          where: (scores, { eq }) => eq(scores.playerId, userId)
+        }
+      },
+      orderBy: (sessions, { desc }) => [desc(sessions.startTime)]
+    });
+    return sessions;
+  }
