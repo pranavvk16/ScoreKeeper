@@ -26,6 +26,9 @@ export const gameSessions = pgTable("game_sessions", {
   startTime: timestamp("start_time").defaultNow().notNull(),
   endTime: timestamp("end_time"),
   isComplete: boolean("is_complete").default(false),
+  maxPlayers: integer("max_players").notNull(),
+  currentPlayers: integer("current_players").default(0),
+  expiresAt: timestamp("expires_at").notNull(),
 });
 
 export const scores = pgTable("scores", {

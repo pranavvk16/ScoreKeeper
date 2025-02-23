@@ -28,13 +28,47 @@ export function GameList({ games }: GameListProps) {
     }
   };
 
+  const { data: activeSessions } = useQuery({
+    queryKey: ["/api/sessions/active"],
+    refetchInterval: 5000
+  });
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Games</h2>
-        <Button onClick={() => setShowJoinDialog(true)}>
-          Join Game
-        </Button>
+        <div className="space-x-2">
+          <Button onClick={() => setShowJoinDialog(true)}>
+            Join Game
+          </Button>
+        </div>
+      </div>
+
+      <div className="mb-8">
+        <h3 className="text-xl font-semibold mb-4">Active Sessions</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {activeSessions?.map((session) => (
+            <Card key={session.id} className="bg-muted/50">
+              <CardHeader>
+                <CardTitle className="flex justify-between">
+                  <span>Session #{session.id}</span>
+                  <Badge variant={session.currentPlayers >= session.maxPlayers ? "destructive" : "default"}>
+                    {session.currentPlayers}/{session.maxPlayers} Players
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardFooter>
+                <Button 
+                  className="w-full"
+                  disabled={session.currentPlayers >= session.maxPlayers}
+                  onClick={() => handleJoinGame(session.id)}
+                >
+                  Join Session
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

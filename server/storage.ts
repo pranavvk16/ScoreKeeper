@@ -15,8 +15,9 @@ export interface IStorage {
   getGame(id: number): Promise<Game | undefined>;
   createGame(game: InsertGame): Promise<Game>;
 
-  createGameSession(session: InsertGameSession): Promise<GameSession>;
+  createGameSession(session: InsertGameSession & { maxPlayers: number, currentPlayers: number, expiresAt: Date }): Promise<GameSession>;
   getGameSession(id: number): Promise<GameSession | undefined>;
+  updateSessionPlayers(id: number, playerCount: number): Promise<GameSession>;
   completeGameSession(id: number): Promise<GameSession>;
 
   addScore(score: InsertScore): Promise<Score>;
