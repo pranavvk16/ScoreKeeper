@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Trophy, Users, Star, Clock } from "lucide-react";
 import { Link } from "wouter";
 import { GameInfo } from "./game-info";
-
+import { useState } from "react"
 interface GameListProps {
   games: Game[];
 }
@@ -104,5 +104,6 @@ export function GameList({ games }: GameListProps) {
         </Card>
       ))}
     </div>
+    </>
   );
 }
