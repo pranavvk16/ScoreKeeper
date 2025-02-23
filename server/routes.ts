@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertGameSchema, insertGameSessionSchema, insertScoreSchema } from "@shared/schema";
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function regisScoreKeeperterRoutes(app: Express): Promise<Server> {
   // Games
   app.get("/api/games", async (_req, res) => {
     const games = await storage.getGames();
@@ -42,10 +42,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
-  app.get("/api/users/:id/history", async (req, res) => {
-    const history = await storage.getUserGameHistory(Number(req.params.id));
-    res.json(history);
-  });
+  // app.get("/api/users/:id/history", async (req, res) => {
+  //   const history = await storage.getUserGameHistory(Number(req.params.id));
+  //   res.json(history);
+  // });
 
 
   app.post("/api/sessions/:id/complete", async (req, res) => {

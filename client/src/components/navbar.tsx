@@ -25,20 +25,20 @@ export function Navbar() {
                 <span>Games</span>
               </a>
             </Link>
-            <Link href="/leaderboard">
+            {/* <Link href="/leaderboard">
               <a className="flex items-center space-x-1 text-sm font-medium">
                 <Trophy className="h-4 w-4" />
                 <span>Leaderboard</span>
               </a>
-            </Link>
-            <Link href="/profile">
+            </Link> */}
+            {/* <Link href="/profile">
               <a className="flex items-center space-x-1 text-sm font-medium">
                 <User className="h-4 w-4" />
                 <span>Profile</span>
               </a>
-            </Link>
-            <UserPreferences />
-            <ThemeToggle />
+            </Link> */}
+            {/* <UserPreferences /> */}
+            {/* <ThemeToggle /> */}
           </div>
         </div>
       </div>
