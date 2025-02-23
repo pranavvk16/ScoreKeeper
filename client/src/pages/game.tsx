@@ -28,8 +28,6 @@ export default function GamePage() {
   const [gameSession, setGameSession] = useState<GameSession>();
   const [players, setPlayers] = useState<Player[]>([]);
   const [showGameOver, setShowGameOver] = useState(false);
-  const [sessionId, setSessionId] = useState<string>("");
-  const [joinMode, setJoinMode] = useState(false);
 
   const { data: game, isLoading } = useQuery<Game>({ 
     queryKey: [`/api/games/${gameId}`]
@@ -53,21 +51,6 @@ export default function GamePage() {
       toast({
         title: "Game started!",
         description: "You can now start adding scores.",
-      });
-    }
-  });
-
-  const joinSessionMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const response = await apiRequest("GET", `/api/sessions/${id}`);
-      return response.json();
-    },
-    onSuccess: (sessionData) => {
-      setGameSession(sessionData);
-      setPlayers(sessionData.players || []);
-      toast({
-        title: "Joined game!",
-        description: "You can now add scores.",
       });
     }
   });
@@ -166,42 +149,11 @@ export default function GamePage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            <PlayerManager
-              gameId={game.id}
-              onSelectPlayer={(player) => {
-                const selectedPlayers = players || [];
-                if (selectedPlayers.length < game.maxPlayers) {
-                  setPlayers([...selectedPlayers, player]);
-                }
-              }}
+            <PlayerForm
+              minPlayers={game.minPlayers}
+              maxPlayers={game.maxPlayers}
+              onStart={(players) => createSessionMutation.mutate(players)}
             />
-            {players && players.length > 0 && (
-              <div className="mt-4">
-                <h3 className="text-lg font-semibold mb-2">Selected Players ({players.length}/{game.maxPlayers})</h3>
-                <div className="flex gap-2 flex-wrap">
-                  {players.map((player) => (
-                    <div key={player.id} className="flex items-center gap-2 bg-accent p-2 rounded">
-                      {player.name}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-5 w-5"
-                        onClick={() => setPlayers(players.filter(p => p.id !== player.id))}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-                <Button
-                  className="mt-4 w-full"
-                  disabled={players.length < game.minPlayers}
-                  onClick={() => createSessionMutation.mutate(players)}
-                >
-                  Start Game
-                </Button>
-              </div>
-            )}
           </motion.div>
         ) : (
           <motion.div
