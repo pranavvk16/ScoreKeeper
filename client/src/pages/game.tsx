@@ -29,7 +29,8 @@ export default function GamePage() {
   const startSession = async (playerNames: string[]) => {
     const session = await apiRequest("POST", "/api/sessions", {
       gameId,
-      startTime: new Date(),
+      startTime: new Date().toISOString(),
+      endTime: null,
       isComplete: false
     });
     const sessionData = await session.json();
