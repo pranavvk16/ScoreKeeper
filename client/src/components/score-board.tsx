@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Trophy, ChevronRight, ChevronLeft, Star, Crown, Undo2, Redo2, Plus, Minus } from "lucide-react";
 import { type Game } from "@shared/schema";
 import { Progress } from "@/components/ui/progress";
+import { ImageUploader } from "./image-uploader";
 
 interface Player {
   id: number;
@@ -33,8 +34,9 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
   const [scoreHistory, setScoreHistory] = useState<ScoreAction[]>([]);
   const [undoHistory, setUndoHistory] = useState<ScoreAction[]>([]);
   const [scoreType, setScoreType] = useState<'regular' | 'penalty' | 'bonus'>('regular');
+  const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null); // Added state
 
-  const sortedPlayers = [...players].sort((a, b) => 
+  const sortedPlayers = [...players].sort((a, b) =>
     game.highestWins ? b.total - a.total : a.total - b.total
   );
 
@@ -55,7 +57,7 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
       setNewScores(prev => ({ ...prev, [playerId]: "" }));
 
       // Check if all players have submitted scores for current round
-      const allScoresSubmitted = players.every(p => 
+      const allScoresSubmitted = players.every(p =>
         p.scores.length > currentRound || p.id === playerId
       );
       if (allScoresSubmitted) {
@@ -144,8 +146,8 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={onEndGame}
               className="bg-red-500 hover:bg-red-600"
             >
@@ -155,6 +157,15 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="mb-4">
+          <ImageUploader
+            onScoreCalculated={(score) => {
+              if (selectedPlayerId) {
+                handleScoreSubmit(selectedPlayerId, score);
+              }
+            }}
+          />
+        </div>
         <div className="mb-4 flex justify-center gap-2">
           <Button
             variant={scoreType === 'regular' ? 'default' : 'outline'}
@@ -183,23 +194,23 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
 
         <div className="space-y-4">
           {sortedPlayers.map((player, index) => (
-            <div 
-              key={player.id} 
+            <div
+              key={player.id}
               className={`flex items-center space-x-4 p-4 rounded-lg transition-colors ${
-                index === 0 ? 'bg-yellow-100 dark:bg-yellow-900/20' : 
-                index === 1 ? 'bg-gray-100 dark:bg-gray-800/50' :
-                index === 2 ? 'bg-amber-100 dark:bg-amber-900/20' :
-                'bg-muted/50'
+                index === 0 ? 'bg-yellow-100 dark:bg-yellow-900/20' :
+                  index === 1 ? 'bg-gray-100 dark:bg-gray-800/50' :
+                    index === 2 ? 'bg-amber-100 dark:bg-amber-900/20' :
+                      'bg-muted/50'
               }`}
             >
               <div className="w-8 flex justify-center">
                 {index === 0 ? <Crown className="h-6 w-6 text-yellow-500" /> :
-                 index === 1 ? <Star className="h-6 w-6 text-gray-400" /> :
-                 index === 2 ? <Star className="h-6 w-6 text-amber-700" /> :
-                 <span className="text-lg font-bold">{index + 1}</span>}
+                  index === 1 ? <Star className="h-6 w-6 text-gray-400" /> :
+                    index === 2 ? <Star className="h-6 w-6 text-amber-700" /> :
+                      <span className="text-lg font-bold">{index + 1}</span>}
               </div>
               <div className="flex-1">
-                <div className="font-medium">{player.name}</div>
+                <div className="font-medium" onClick={() => setSelectedPlayerId(player.id)}>{player.name}</div> {/* Added onClick */}
                 <div className="text-sm text-muted-foreground">
                   Previous rounds: {player.scores.slice(0, currentRound).join(", ")}
                 </div>
@@ -209,13 +220,13 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
                   type="number"
                   placeholder="Score"
                   value={newScores[player.id] || ""}
-                  onChange={(e) => setNewScores(prev => ({ 
-                    ...prev, 
-                    [player.id]: e.target.value 
+                  onChange={(e) => setNewScores(prev => ({
+                    ...prev,
+                    [player.id]: e.target.value
                   }))}
                   className={`w-24 ${
                     scoreType === 'penalty' ? 'border-red-500' :
-                    scoreType === 'bonus' ? 'border-green-500' : ''
+                      scoreType === 'bonus' ? 'border-green-500' : ''
                   }`}
                   disabled={player.scores.length > currentRound}
                 />
@@ -225,7 +236,7 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
                   disabled={player.scores.length > currentRound}
                   className={
                     scoreType === 'penalty' ? 'text-red-500 hover:text-red-600' :
-                    scoreType === 'bonus' ? 'text-green-500 hover:text-green-600' : ''
+                      scoreType === 'bonus' ? 'text-green-500 hover:text-green-600' : ''
                   }
                 >
                   Add
