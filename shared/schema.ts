@@ -1,38 +1,31 @@
-
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const gameCategories = pgTable("game_categories", {
+export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description").notNull(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  gamesPlayed: integer("games_played").default(0),
+  gamesWon: integer("games_won").default(0),
 });
 
 export const games = pgTable("games", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description").notNull(),
-  categoryId: integer("category_id").notNull(),
   maxPlayers: integer("max_players").notNull(),
   minPlayers: integer("min_players").notNull(),
   highestWins: boolean("highest_wins").notNull(),
+  isCustom: boolean("is_custom").default(false),
 });
 
 export const gameSessions = pgTable("game_sessions", {
   id: serial("id").primaryKey(),
   gameId: integer("game_id").notNull(),
-  sessionCode: text("session_code").notNull().unique(),
   startTime: timestamp("start_time").defaultNow().notNull(),
   endTime: timestamp("end_time"),
   isComplete: boolean("is_complete").default(false),
-});
-
-export const sessionPlayers = pgTable("session_players", {
-  id: serial("id").primaryKey(),
-  sessionId: integer("session_id").notNull(),
-  playerName: text("player_name").notNull(),
-  joinTime: timestamp("join_time").defaultNow().notNull(),
 });
 
 export const scores = pgTable("scores", {
@@ -43,14 +36,49 @@ export const scores = pgTable("scores", {
   round: integer("round").notNull(),
 });
 
-export const insertGameCategorySchema = createInsertSchema(gameCategories);
+export const insertUserSchema = createInsertSchema(users).pick({
+  username: true,
+  password: true,
+});
+
 export const insertGameSchema = createInsertSchema(games);
-export const insertGameSessionSchema = createInsertSchema(gameSessions);
-export const insertSessionPlayerSchema = createInsertSchema(sessionPlayers);
+export const insertGameSessionSchema = createInsertSchema(gameSessions).pick({
+  gameId: true,
+});
 export const insertScoreSchema = createInsertSchema(scores);
 
-export type GameCategory = typeof gameCategories.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertGame = z.infer<typeof insertGameSchema>;
+export type InsertGameSession = z.infer<typeof insertGameSessionSchema>;
+export type InsertScore = z.infer<typeof insertScoreSchema>;
+
+export type User = typeof users.$inferSelect;
 export type Game = typeof games.$inferSelect;
 export type GameSession = typeof gameSessions.$inferSelect;
-export type SessionPlayer = typeof sessionPlayers.$inferSelect;
+export const players = pgTable("players", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  nickname: varchar("nickname", { length: 50 }),
+  photoUrl: text("photo_url"),
+  userId: integer("user_id").notNull(),
+  isTemporary: boolean("is_temporary").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const matchHistory = pgTable("match_history", {
+  id: serial("id").primaryKey(),
+  gameSessionId: integer("game_session_id").notNull(),
+  playerId: integer("player_id").notNull(),
+  score: integer("score").notNull(),
+  rank: integer("rank").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertPlayerSchema = createInsertSchema(players);
+export const insertMatchHistorySchema = createInsertSchema(matchHistory);
+
 export type Score = typeof scores.$inferSelect;
+export type Player = typeof players.$inferSelect;
+export type MatchHistory = typeof matchHistory.$inferSelect;
+export type InsertPlayer = z.infer<typeof insertPlayerSchema>;
+export type InsertMatchHistory = z.infer<typeof insertMatchHistorySchema>;
