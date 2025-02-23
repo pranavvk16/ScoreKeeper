@@ -31,36 +31,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!parsed.success) {
       return res.status(400).json({ message: "Invalid session data" });
     }
-    const game = await storage.getGame(parsed.data.gameId);
-    if (!game) {
-      return res.status(404).json({ message: "Game not found" });
-    }
-    const session = await storage.createGameSession({
-      ...parsed.data,
-      maxPlayers: game.maxPlayers,
-      currentPlayers: 1,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-    });
+    const session = await storage.createGameSession(parsed.data);
     res.status(201).json(session);
-  });
-
-  app.post("/api/sessions/:id/join", async (req, res) => {
-    const session = await storage.getGameSession(Number(req.params.id));
-    if (!session) {
-      return res.status(404).json({ message: "Session not found" });
-    }
-    if (session.isComplete) {
-      return res.status(400).json({ message: "Game already completed" });
-    }
-    if (session.currentPlayers >= session.maxPlayers) {
-      return res.status(400).json({ message: "Game is full" });
-    }
-    if (new Date(session.expiresAt) < new Date()) {
-      return res.status(400).json({ message: "Session expired" });
-    }
-    
-    const updatedSession = await storage.updateSessionPlayers(Number(req.params.id), session.currentPlayers + 1);
-    res.json(updatedSession);
   });
 
   app.get("/api/sessions/:id", async (req, res) => {

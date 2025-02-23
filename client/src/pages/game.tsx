@@ -19,10 +19,9 @@ interface Player {
 }
 
 export default function GamePage() {
-  const [, params] = useRoute("/game/:type/:id");
-  const isSession = params?.type === "session";
-  const id = params?.id || "";
-  const gameId = isSession ? undefined : Number(id);
+  const [, params] = useRoute("/game/:id");
+  const [, setLocation] = useLocation();
+  const gameId = Number(params?.id);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -30,14 +29,8 @@ export default function GamePage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [showGameOver, setShowGameOver] = useState(false);
 
-  const { data: session } = useQuery({
-    queryKey: [`/api/sessions/${id}`],
-    enabled: isSession
-  });
-
   const { data: game, isLoading } = useQuery<Game>({ 
-    queryKey: [`/api/games/${isSession ? session?.gameId : gameId}`],
-    enabled: !isSession || !!session
+    queryKey: [`/api/games/${gameId}`]
   });
 
   const createSessionMutation = useMutation({
