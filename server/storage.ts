@@ -26,7 +26,6 @@ export interface IStorage {
   addScore(score: InsertScore): Promise<Score>;
   getSessionScores(sessionId: number): Promise<Score[]>;
   getPlayerScores(playerId: number): Promise<Score[]>;
-  getUserGameHistory(userId: number): Promise<GameSession[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -159,7 +158,7 @@ export class MemStorage implements IStorage {
   async updateUserStats(userId: number, won: boolean): Promise<User> {
     const user = await this.getUser(userId);
     if (!user) throw new Error("User not found");
-
+    
     const updatedUser: User = {
       ...user,
       gamesPlayed: user.gamesPlayed + 1,
@@ -192,13 +191,26 @@ export class MemStorage implements IStorage {
   }
 
   async getGameSession(id: number): Promise<GameSession | undefined> {
-    return this.sessions.get(id);
+    const session = this.sessions.get(id);
+    if (!session) return undefined;
+    
+    const scores = await this.getSessionScores(id);
+    const playerIds = [...new Set(scores.map(s => s.playerId))];
+    
+    return {
+      ...session,
+      players: playerIds.map(pid => ({
+        id: pid,
+        scores: scores.filter(s => s.playerId === pid).map(s => s.score),
+        total: scores.filter(s => s.playerId === pid).reduce((a, b) => a + b.score, 0)
+      }))
+    };
   }
 
   async completeGameSession(id: number): Promise<GameSession> {
     const session = await this.getGameSession(id);
     if (!session) throw new Error("Session not found");
-
+    
     const completedSession: GameSession = {
       ...session,
       endTime: new Date(),
@@ -226,12 +238,18 @@ export class MemStorage implements IStorage {
       score => score.playerId === playerId
     );
   }
-
-  async getUserGameHistory(userId: number): Promise<GameSession[]> {
-    return Array.from(this.sessions.values()).filter(session => 
-      this.scores.has(session.id) && this.scores.get(session.id)?.playerId === userId
-    );
-  }
 }
 
 export const storage = new MemStorage();
+  async getUserGameHistory(userId: number) {
+    const sessions = await db.query.gameSessions.findMany({
+      with: {
+        game: true,
+        scores: {
+          where: (scores, { eq }) => eq(scores.playerId, userId)
+        }
+      },
+      orderBy: (sessions, { desc }) => [desc(sessions.startTime)]
+    });
+    return sessions;
+  }

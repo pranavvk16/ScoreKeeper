@@ -1,4 +1,4 @@
-import { useState,useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
 import { type Game, type GameSession, type Score } from "@shared/schema";
@@ -28,41 +28,12 @@ export default function GamePage() {
   const [gameSession, setGameSession] = useState<GameSession>();
   const [players, setPlayers] = useState<Player[]>([]);
   const [showGameOver, setShowGameOver] = useState(false);
+  const [sessionId, setSessionId] = useState<string>("");
+  const [joinMode, setJoinMode] = useState(false);
 
   const { data: game, isLoading } = useQuery<Game>({ 
     queryKey: [`/api/games/${gameId}`]
   });
-
-  const { data: existingSession } = useQuery<GameSession>({
-    queryKey: [`/api/sessions/${gameId}`],
-    enabled: !!gameId,
-  });
-
-  useEffect(() => {
-    if (existingSession) {
-      setGameSession(existingSession);
-      // Fetch current players and scores
-      apiRequest("GET", `/api/sessions/${existingSession.id}/scores`)
-        .then(res => res.json())
-        .then(scores => {
-          const playerMap = new Map<number, Player>();
-          scores.forEach((score: Score) => {
-            if (!playerMap.has(score.playerId)) {
-              playerMap.set(score.playerId, {
-                id: score.playerId,
-                name: `Player ${score.playerId}`,
-                scores: [],
-                total: 0
-              });
-            }
-            const player = playerMap.get(score.playerId)!;
-            player.scores.push(score.score);
-            player.total += score.score;
-          });
-          setPlayers(Array.from(playerMap.values()));
-        });
-    }
-  }, [existingSession]);
 
   const createSessionMutation = useMutation({
     mutationFn: async (playerNames: string[]) => {
@@ -82,6 +53,21 @@ export default function GamePage() {
       toast({
         title: "Game started!",
         description: "You can now start adding scores.",
+      });
+    }
+  });
+
+  const joinSessionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest("GET", `/api/sessions/${id}`);
+      return response.json();
+    },
+    onSuccess: (sessionData) => {
+      setGameSession(sessionData);
+      setPlayers(sessionData.players || []);
+      toast({
+        title: "Joined game!",
+        description: "You can now add scores.",
       });
     }
   });
