@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Trophy, ChevronRight, ChevronLeft, Star, Crown, Undo2, Redo2, Plus, Minus } from "lucide-react";
 import { type Game } from "@shared/schema";
 import { Progress } from "@/components/ui/progress";
-import { toast } from "@/components/ui/use-toast";
 
 interface Player {
   id: number;
@@ -34,6 +33,7 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
   const [scoreHistory, setScoreHistory] = useState<ScoreAction[]>([]);
   const [undoHistory, setUndoHistory] = useState<ScoreAction[]>([]);
   const [scoreType, setScoreType] = useState<'regular' | 'penalty' | 'bonus'>('regular');
+  const [notification, setNotification] = useState(''); // Added notification state
 
   const sortedPlayers = [...players].sort((a, b) => 
     game.highestWins ? b.total - a.total : a.total - b.total
@@ -61,11 +61,8 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
       );
       if (allScoresSubmitted) {
         // Show round end animation before transitioning
-        toast({
-          description: "Round Complete!",
-          duration: 2000,
-          className: "animate-bounce bg-green-500 text-white"
-        });
+        setNotification("Round Complete!"); // Use notification state
+        setTimeout(() => setNotification(""), 2000); // Clear after 2 seconds
         setTimeout(() => setCurrentRound(prev => prev + 1), 1000);
       }
     }
@@ -245,6 +242,7 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
             </div>
           ))}
         </div>
+        {notification && <div className="text-center mt-4">{notification}</div>} {/* Display notification */}
       </CardContent>
       <CardFooter className="border-t pt-6">
         <div className="w-full grid grid-cols-3 gap-4 text-sm text-muted-foreground">
