@@ -63,6 +63,70 @@ export class MemStorage implements IStorage {
         minPlayers: 2,
         highestWins: false,
         isCustom: false
+      },
+      {
+        name: "Scrabble",
+        description: "Word building board game",
+        maxPlayers: 4,
+        minPlayers: 2,
+        highestWins: true,
+        isCustom: false
+      },
+      {
+        name: "Yahtzee",
+        description: "Dice rolling and scoring game",
+        maxPlayers: 8,
+        minPlayers: 1,
+        highestWins: true,
+        isCustom: false
+      },
+      {
+        name: "Hearts",
+        description: "Classic Hearts card game",
+        maxPlayers: 4,
+        minPlayers: 3,
+        highestWins: false,
+        isCustom: false
+      },
+      {
+        name: "Rummy",
+        description: "Card matching and set collection",
+        maxPlayers: 6,
+        minPlayers: 2,
+        highestWins: true,
+        isCustom: false
+      },
+      {
+        name: "Bowling",
+        description: "Ten-pin bowling scoring",
+        maxPlayers: 8,
+        minPlayers: 1,
+        highestWins: true,
+        isCustom: false
+      },
+      {
+        name: "Darts",
+        description: "Classic darts scoring",
+        maxPlayers: 8,
+        minPlayers: 1,
+        highestWins: true,
+        isCustom: false
+      },
+      {
+        name: "Bridge",
+        description: "Contract bridge scoring",
+        maxPlayers: 4,
+        minPlayers: 4,
+        highestWins: true,
+        isCustom: false
+      },
+      {
+        name: "Golf",
+        description: "Golf card game scoring",
+        maxPlayers: 8,
+        minPlayers: 2,
+        highestWins: false,
+        isCustom: false
       }
     ];
 
