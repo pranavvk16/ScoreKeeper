@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Trophy, ChevronRight, ChevronLeft, Star, Crown, Undo2, Redo2, Plus, Minus } from "lucide-react";
 import { type Game } from "@shared/schema";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "@/components/ui/use-toast";
 
 interface Player {
   id: number;
@@ -59,7 +60,13 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
         p.scores.length > currentRound || p.id === playerId
       );
       if (allScoresSubmitted) {
-        setCurrentRound(prev => prev + 1);
+        // Show round end animation before transitioning
+        toast({
+          description: "Round Complete!",
+          duration: 2000,
+          className: "animate-bounce bg-green-500 text-white"
+        });
+        setTimeout(() => setCurrentRound(prev => prev + 1), 1000);
       }
     }
   };
