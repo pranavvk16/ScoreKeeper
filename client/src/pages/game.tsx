@@ -34,8 +34,7 @@ export default function GamePage() {
   const createSessionMutation = useMutation({
     mutationFn: async (playerNames: string[]) => {
       const response = await apiRequest("POST", "/api/sessions", {
-        gameId,
-        isComplete: false
+        gameId
       });
       return response.json();
     },
@@ -51,26 +50,18 @@ export default function GamePage() {
         title: "Game started!",
         description: "You can now start adding scores.",
       });
-    },
-    onError: () => {
-      toast({
-        title: "Failed to start game",
-        description: "Please try again.",
-        variant: "destructive"
-      });
     }
   });
 
   const addScoreMutation = useMutation({
     mutationFn: async ({ playerId, score }: { playerId: number; score: number }) => {
       if (!gameSession) throw new Error("No active session");
-      const response = await apiRequest("POST", "/api/scores", {
+      return apiRequest("POST", "/api/scores", {
         sessionId: gameSession.id,
         playerId,
         score,
         round: players.find(p => p.id === playerId)?.scores.length || 0
       });
-      return response.json();
     },
     onSuccess: (_, { playerId, score }) => {
       setPlayers(current => 
@@ -86,6 +77,10 @@ export default function GamePage() {
           return player;
         })
       );
+      toast({
+        title: "Score added",
+        description: "The score has been recorded successfully.",
+      });
     }
   });
 

@@ -23,7 +23,7 @@ export const games = pgTable("games", {
 export const gameSessions = pgTable("game_sessions", {
   id: serial("id").primaryKey(),
   gameId: integer("game_id").notNull(),
-  startTime: timestamp("start_time").notNull(),
+  startTime: timestamp("start_time").defaultNow().notNull(),
   endTime: timestamp("end_time"),
   isComplete: boolean("is_complete").default(false),
 });
@@ -42,7 +42,9 @@ export const insertUserSchema = createInsertSchema(users).pick({
 });
 
 export const insertGameSchema = createInsertSchema(games);
-export const insertGameSessionSchema = createInsertSchema(gameSessions);
+export const insertGameSessionSchema = createInsertSchema(gameSessions).pick({
+  gameId: true,
+});
 export const insertScoreSchema = createInsertSchema(scores);
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
