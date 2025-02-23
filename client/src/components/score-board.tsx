@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trophy, ChevronRight, ChevronLeft } from "lucide-react";
+import { Trophy, ChevronRight, ChevronLeft, Star, Crown } from "lucide-react";
 import { type Game } from "@shared/schema";
+import { Progress } from "@/components/ui/progress";
 
 interface Player {
   id: number;
@@ -32,6 +33,14 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
     if (!isNaN(score)) {
       onScoreSubmit(playerId, score);
       setNewScores(prev => ({ ...prev, [playerId]: "" }));
+
+      // Check if all players have submitted scores for current round
+      const allScoresSubmitted = players.every(p => 
+        p.scores.length > currentRound || p.id === playerId
+      );
+      if (allScoresSubmitted) {
+        setCurrentRound(prev => prev + 1);
+      }
     }
   };
 
@@ -39,11 +48,18 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
   const canGoNext = currentRound < maxRound - 1;
   const canGoPrev = currentRound > 0;
 
+  // Calculate progress for current round
+  const playersWithScores = players.filter(p => p.scores[currentRound] !== undefined).length;
+  const roundProgress = (playersWithScores / players.length) * 100;
+
   return (
-    <Card className="w-full">
+    <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>Scoreboard</span>
+          <div className="flex items-center gap-2">
+            <Trophy className="h-6 w-6 text-primary" />
+            <span>Round {currentRound + 1}</span>
+          </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-sm">
               <Button
@@ -54,7 +70,9 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span>Round {currentRound + 1}</span>
+              <div className="w-32">
+                <Progress value={roundProgress} className="h-2" />
+              </div>
               <Button
                 variant="outline"
                 size="icon"
@@ -67,6 +85,7 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
             <Button 
               variant="destructive" 
               onClick={onEndGame}
+              className="bg-red-500 hover:bg-red-600"
             >
               End Game
             </Button>
@@ -76,14 +95,25 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
       <CardContent>
         <div className="space-y-4">
           {sortedPlayers.map((player, index) => (
-            <div key={player.id} className="flex items-center space-x-4">
+            <div 
+              key={player.id} 
+              className={`flex items-center space-x-4 p-4 rounded-lg transition-colors ${
+                index === 0 ? 'bg-yellow-100 dark:bg-yellow-900/20' : 
+                index === 1 ? 'bg-gray-100 dark:bg-gray-800/50' :
+                index === 2 ? 'bg-amber-100 dark:bg-amber-900/20' :
+                'bg-muted/50'
+              }`}
+            >
+              <div className="w-8 flex justify-center">
+                {index === 0 ? <Crown className="h-6 w-6 text-yellow-500" /> :
+                 index === 1 ? <Star className="h-6 w-6 text-gray-400" /> :
+                 index === 2 ? <Star className="h-6 w-6 text-amber-700" /> :
+                 <span className="text-lg font-bold">{index + 1}</span>}
+              </div>
               <div className="flex-1">
-                <div className="flex items-center space-x-2">
-                  {index === 0 && <Trophy className="h-5 w-5 text-yellow-500" />}
-                  <span className="font-medium">{player.name}</span>
-                </div>
+                <div className="font-medium">{player.name}</div>
                 <div className="text-sm text-muted-foreground">
-                  Round {currentRound + 1}: {player.scores[currentRound] || '-'}
+                  Previous rounds: {player.scores.slice(0, currentRound).join(", ")}
                 </div>
               </div>
               <div className="flex items-center space-x-2">
@@ -96,22 +126,25 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
                     [player.id]: e.target.value 
                   }))}
                   className="w-24"
+                  disabled={player.scores.length > currentRound}
                 />
                 <Button
                   variant="outline"
                   onClick={() => handleScoreSubmit(player.id)}
+                  disabled={player.scores.length > currentRound}
                 >
                   Add
                 </Button>
-                <div className="w-20 text-right font-bold">
-                  Total: {player.total}
+                <div className="w-24 text-right">
+                  <div className="font-bold">{player.total}</div>
+                  <div className="text-xs text-muted-foreground">Total Score</div>
                 </div>
               </div>
             </div>
           ))}
         </div>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="border-t pt-6">
         <div className="w-full grid grid-cols-3 gap-4 text-sm text-muted-foreground">
           <div>Current Round: {currentRound + 1}</div>
           <div className="text-center">Total Rounds: {maxRound}</div>

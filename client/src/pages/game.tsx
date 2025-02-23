@@ -9,6 +9,7 @@ import { getGameRules } from "@/lib/games";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { GameOver } from "@/components/game-over";
 
 interface Player {
   id: number;
@@ -26,6 +27,7 @@ export default function GamePage() {
 
   const [gameSession, setGameSession] = useState<GameSession>();
   const [players, setPlayers] = useState<Player[]>([]);
+  const [showGameOver, setShowGameOver] = useState(false);
 
   const { data: game, isLoading } = useQuery<Game>({ 
     queryKey: [`/api/games/${gameId}`]
@@ -90,13 +92,19 @@ export default function GamePage() {
       await apiRequest("POST", `/api/sessions/${gameSession.id}/complete`);
     },
     onSuccess: () => {
+      setShowGameOver(true);
       toast({
         title: "Game completed!",
-        description: "Redirecting to home page...",
+        description: "Check out the final scores!",
       });
-      setTimeout(() => setLocation("/"), 1500);
     }
   });
+
+  const handlePlayAgain = () => {
+    setGameSession(undefined);
+    setPlayers([]);
+    setShowGameOver(false);
+  };
 
   if (isLoading || !game) {
     return (
@@ -164,6 +172,14 @@ export default function GamePage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {showGameOver && game && (
+        <GameOver 
+          game={game}
+          players={players}
+          onPlayAgain={handlePlayAgain}
+        />
+      )}
     </div>
   );
 }
