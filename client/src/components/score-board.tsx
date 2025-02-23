@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,14 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
   const [scoreHistory, setScoreHistory] = useState<ScoreAction[]>([]);
   const [undoHistory, setUndoHistory] = useState<ScoreAction[]>([]);
   const [scoreType, setScoreType] = useState<'regular' | 'penalty' | 'bonus'>('regular');
+  const [notification, setNotification] = useState('');
+  const [lastRound, setLastRound] = useState(0);
+
+  useEffect(() => {
+    // Update last round when new scores are added
+    const maxRoundInScores = Math.max(...players.map(p => p.scores.length), 0);
+    setLastRound(maxRoundInScores);
+  }, [players]);
 
   const sortedPlayers = [...players].sort((a, b) => 
     game.highestWins ? b.total - a.total : a.total - b.total
@@ -60,6 +68,7 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
       );
       if (allScoresSubmitted) {
         setCurrentRound(prev => prev + 1);
+        showRoundWinner(currentRound);
       }
     }
   };
@@ -87,12 +96,20 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
   };
 
   const maxRound = Math.max(...players.map(p => p.scores.length), 0);
-  const canGoNext = currentRound < maxRound - 1;
+  const canGoNext = currentRound < maxRound -1 ;
   const canGoPrev = currentRound > 0;
 
   // Calculate progress for current round
   const playersWithScores = players.filter(p => p.scores[currentRound] !== undefined).length;
   const roundProgress = (playersWithScores / players.length) * 100;
+
+  const showRoundWinner = (round: number) => {
+    // Implement logic to determine and display the round winner with animation
+    //  This is a placeholder, replace with actual logic.
+    const winner = sortedPlayers[0].name; // Replace with actual winner determination
+    setNotification(`Round ${round + 1} Winner: ${winner}!`);
+  };
+
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
@@ -125,24 +142,30 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setCurrentRound(r => r - 1)}
-                disabled={!canGoPrev}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    setCurrentRound(r => Math.max(0, r - 1));
+                    showRoundWinner(currentRound -1);
+                  }}
+                  disabled={!canGoPrev}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
               <div className="w-32">
                 <Progress value={roundProgress} className="h-2" />
               </div>
               <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setCurrentRound(r => r + 1)}
-                disabled={!canGoNext}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    setCurrentRound(r => Math.min(lastRound, r + 1));
+                    showRoundWinner(currentRound);
+                  }}
+                  disabled={!canGoNext || currentRound >= lastRound}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
             </div>
             <Button 
               variant="destructive" 
@@ -238,6 +261,11 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
             </div>
           ))}
         </div>
+        {notification && (
+          <div className="text-center mt-4 p-2 bg-primary/10 rounded-lg animate-bounce">
+            {notification}
+          </div>
+        )}
       </CardContent>
       <CardFooter className="border-t pt-6">
         <div className="w-full grid grid-cols-3 gap-4 text-sm text-muted-foreground">
