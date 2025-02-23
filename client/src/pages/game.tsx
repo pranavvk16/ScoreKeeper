@@ -28,8 +28,6 @@ export default function GamePage() {
   const [gameSession, setGameSession] = useState<GameSession>();
   const [players, setPlayers] = useState<Player[]>([]);
   const [showGameOver, setShowGameOver] = useState(false);
-  const [sessionId, setSessionId] = useState<string>("");
-  const [joinMode, setJoinMode] = useState(false);
 
   const { data: game, isLoading } = useQuery<Game>({ 
     queryKey: [`/api/games/${gameId}`]
@@ -53,21 +51,6 @@ export default function GamePage() {
       toast({
         title: "Game started!",
         description: "You can now start adding scores.",
-      });
-    }
-  });
-
-  const joinSessionMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const response = await apiRequest("GET", `/api/sessions/${id}`);
-      return response.json();
-    },
-    onSuccess: (sessionData) => {
-      setGameSession(sessionData);
-      setPlayers(sessionData.players || []);
-      toast({
-        title: "Joined game!",
-        description: "You can now add scores.",
       });
     }
   });

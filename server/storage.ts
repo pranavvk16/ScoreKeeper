@@ -191,20 +191,7 @@ export class MemStorage implements IStorage {
   }
 
   async getGameSession(id: number): Promise<GameSession | undefined> {
-    const session = this.sessions.get(id);
-    if (!session) return undefined;
-    
-    const scores = await this.getSessionScores(id);
-    const playerIds = [...new Set(scores.map(s => s.playerId))];
-    
-    return {
-      ...session,
-      players: playerIds.map(pid => ({
-        id: pid,
-        scores: scores.filter(s => s.playerId === pid).map(s => s.score),
-        total: scores.filter(s => s.playerId === pid).reduce((a, b) => a + b.score, 0)
-      }))
-    };
+    return this.sessions.get(id);
   }
 
   async completeGameSession(id: number): Promise<GameSession> {
