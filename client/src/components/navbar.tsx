@@ -1,6 +1,10 @@
 import { Link } from "wouter";
 import { Trophy, Home, User } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
+// Added UserPreferences component -  Implementation details are missing from the provided information.
+function UserPreferences() {
+  return <div>User Preferences Placeholder</div>; // Placeholder for missing implementation.
+}
 
 export function Navbar() {
   return (
@@ -33,6 +37,7 @@ export function Navbar() {
                 <span>Profile</span>
               </a>
             </Link>
+            <UserPreferences />
             <ThemeToggle />
           </div>
         </div>
