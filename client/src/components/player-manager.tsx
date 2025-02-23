@@ -114,3 +114,97 @@ export function PlayerManager({ onSelectPlayer, gameId }: PlayerManagerProps) {
     </div>
   );
 }
+import { useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { type Player } from "@shared/schema";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { X, Plus } from "lucide-react";
+
+interface PlayerManagerProps {
+  onSelectPlayer: (player: Player) => void;
+  gameId: number;
+}
+
+export function PlayerManager({ onSelectPlayer, gameId }: PlayerManagerProps) {
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newPlayer, setNewPlayer] = useState({ name: "", nickname: "", photoUrl: "" });
+
+  const { data: players, refetch } = useQuery<Player[]>({
+    queryKey: ["/api/players"]
+  });
+
+  const addPlayerMutation = useMutation({
+    mutationFn: async (player: Partial<Player>) => {
+      const res = await fetch("/api/players", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(player)
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      refetch();
+      setShowAddForm(false);
+      setNewPlayer({ name: "", nickname: "", photoUrl: "" });
+    }
+  });
+
+  const handleAddPlayer = () => {
+    addPlayerMutation.mutate({
+      name: newPlayer.name,
+      nickname: newPlayer.nickname || undefined,
+      photoUrl: newPlayer.photoUrl || undefined,
+      isTemporary: false
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Players</h2>
+        <Button onClick={() => setShowAddForm(!showAddForm)}>
+          {showAddForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+          {showAddForm ? "Cancel" : "Add Player"}
+        </Button>
+      </div>
+
+      {showAddForm && (
+        <div className="space-y-4 p-4 bg-muted rounded-lg">
+          <Input
+            placeholder="Player Name"
+            value={newPlayer.name}
+            onChange={(e) => setNewPlayer({ ...newPlayer, name: e.target.value })}
+          />
+          <Input
+            placeholder="Nickname (optional)"
+            value={newPlayer.nickname}
+            onChange={(e) => setNewPlayer({ ...newPlayer, nickname: e.target.value })}
+          />
+          <Input
+            placeholder="Photo URL (optional)"
+            value={newPlayer.photoUrl}
+            onChange={(e) => setNewPlayer({ ...newPlayer, photoUrl: e.target.value })}
+          />
+          <Button onClick={handleAddPlayer} disabled={!newPlayer.name}>
+            Add Player
+          </Button>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {players?.map((player) => (
+          <Button
+            key={player.id}
+            variant="outline"
+            className="justify-start"
+            onClick={() => onSelectPlayer(player)}
+          >
+            {player.name}
+            {player.nickname && <span className="ml-2 text-muted-foreground">({player.nickname})</span>}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}
