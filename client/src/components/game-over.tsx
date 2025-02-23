@@ -1,16 +1,12 @@
-import { motion } from "framer-motion";
+
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trophy, Medal, Share2, Home, RotateCcw } from "lucide-react";
-import { type Game } from "@shared/schema";
-import { useLocation } from "wouter";
-
-interface Player {
-  id: number;
-  name: string;
-  scores: number[];
-  total: number;
-}
+import { motion } from "framer-motion";
+import ReactConfetti from "react-confetti";
+import { Trophy, Share } from "lucide-react";
+import { type Game, type Player } from "@shared/schema";
 
 interface GameOverProps {
   game: Game;
@@ -20,11 +16,18 @@ interface GameOverProps {
 
 export function GameOver({ game, players, onPlayAgain }: GameOverProps) {
   const [, setLocation] = useLocation();
+  const [showConfetti, setShowConfetti] = useState(true);
   const sortedPlayers = [...players].sort((a, b) => 
     game.highestWins ? b.total - a.total : a.total - b.total
   );
 
   const winner = sortedPlayers[0];
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowConfetti(false), 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const shareScore = async () => {
     const text = `I just finished a game of ${game.name}!\n` +
       `Winner: ${winner.name} with ${winner.total} points\n` +
@@ -32,10 +35,7 @@ export function GameOver({ game, players, onPlayAgain }: GameOverProps) {
     
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: `${game.name} Score`,
-          text: text,
-        });
+        await navigator.share({ title: `${game.name} Score`, text });
       } catch (err) {
         console.error("Error sharing:", err);
       }
@@ -45,70 +45,60 @@ export function GameOver({ game, players, onPlayAgain }: GameOverProps) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-    >
-      <Card className="w-full max-w-2xl">
-        <CardHeader className="text-center">
-          <CardTitle className="flex flex-col items-center gap-4">
-            <Trophy className="h-16 w-16 text-yellow-500" />
-            <div className="space-y-1">
-              <h2 className="text-3xl font-bold">Game Over!</h2>
-              <p className="text-muted-foreground">{game.name}</p>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            <div className="text-center space-y-2">
-              <h3 className="text-xl font-semibold">Winner</h3>
-              <div className="text-2xl font-bold text-primary">
-                {winner.name}
-              </div>
-              <div className="text-muted-foreground">
-                Score: {winner.total}
-              </div>
-            </div>
-
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+      {showConfetti && <ReactConfetti />}
+      <motion.div
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Card className="w-full max-w-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="h-6 w-6 text-yellow-500" />
+              Game Over!
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Final Rankings</h3>
-              {sortedPlayers.map((player, index) => (
-                <div 
-                  key={player.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      {index === 0 ? <Trophy className="h-5 w-5 text-yellow-500" /> :
-                       index === 1 ? <Medal className="h-5 w-5 text-gray-400" /> :
-                       index === 2 ? <Medal className="h-5 w-5 text-amber-700" /> :
-                       <span className="font-bold">{index + 1}</span>}
-                    </div>
-                    <span className="font-medium">{player.name}</span>
-                  </div>
-                  <div className="font-bold">{player.total}</div>
-                </div>
-              ))}
+              <motion.div 
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="text-2xl font-bold text-center"
+              >
+                {winner.name} Wins!
+              </motion.div>
+              <div className="space-y-2">
+                {sortedPlayers.map((player, index) => (
+                  <motion.div
+                    key={player.id}
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.5 + index * 0.1 }}
+                    className="flex justify-between items-center p-3 rounded-lg bg-muted"
+                  >
+                    <span>{player.name}</span>
+                    <span className="font-bold">{player.total} points</span>
+                  </motion.div>
+                ))}
+              </div>
             </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-center gap-4">
-          <Button onClick={() => setLocation("/")} variant="outline">
-            <Home className="h-4 w-4 mr-2" />
-            Home
-          </Button>
-          <Button onClick={onPlayAgain} variant="outline">
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Play Again
-          </Button>
-          <Button onClick={shareScore} className="bg-primary">
-            <Share2 className="h-4 w-4 mr-2" />
-            Share Score
-          </Button>
-        </CardFooter>
-      </Card>
-    </motion.div>
+          </CardContent>
+          <CardFooter className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={shareScore}>
+              <Share className="h-4 w-4 mr-2" />
+              Share
+            </Button>
+            <Button variant="outline" onClick={() => setLocation("/")}>
+              New Game
+            </Button>
+            <Button onClick={onPlayAgain}>
+              Play Again
+            </Button>
+          </CardFooter>
+        </Card>
+      </motion.div>
+    </div>
   );
 }
