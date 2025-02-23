@@ -33,7 +33,6 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
   const [scoreHistory, setScoreHistory] = useState<ScoreAction[]>([]);
   const [undoHistory, setUndoHistory] = useState<ScoreAction[]>([]);
   const [scoreType, setScoreType] = useState<'regular' | 'penalty' | 'bonus'>('regular');
-  const [notification, setNotification] = useState(''); // Added notification state
 
   const sortedPlayers = [...players].sort((a, b) => 
     game.highestWins ? b.total - a.total : a.total - b.total
@@ -60,10 +59,7 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
         p.scores.length > currentRound || p.id === playerId
       );
       if (allScoresSubmitted) {
-        // Show round end animation before transitioning
-        setNotification("Round Complete!"); // Use notification state
-        setTimeout(() => setNotification(""), 2000); // Clear after 2 seconds
-        setTimeout(() => setCurrentRound(prev => prev + 1), 1000);
+        setCurrentRound(prev => prev + 1);
       }
     }
   };
@@ -242,7 +238,6 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
             </div>
           ))}
         </div>
-        {notification && <div className="text-center mt-4">{notification}</div>} {/* Display notification */}
       </CardContent>
       <CardFooter className="border-t pt-6">
         <div className="w-full grid grid-cols-3 gap-4 text-sm text-muted-foreground">

@@ -41,13 +41,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(session);
   });
 
-
-  app.get("/api/users/:id/history", async (req, res) => {
-    const history = await storage.getUserGameHistory(Number(req.params.id));
-    res.json(history);
-  });
-
-
   app.post("/api/sessions/:id/complete", async (req, res) => {
     try {
       const session = await storage.completeGameSession(Number(req.params.id));

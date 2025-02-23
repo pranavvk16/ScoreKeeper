@@ -158,7 +158,7 @@ export class MemStorage implements IStorage {
   async updateUserStats(userId: number, won: boolean): Promise<User> {
     const user = await this.getUser(userId);
     if (!user) throw new Error("User not found");
-
+    
     const updatedUser: User = {
       ...user,
       gamesPlayed: user.gamesPlayed + 1,
@@ -183,16 +183,47 @@ export class MemStorage implements IStorage {
     return newGame;
   }
 
-  async getUserGameHistory(userId: number) {
-    return db.query.gameSessions.findMany({
-      with: {
-        game: true,
-        scores: {
-          where: (scores, helpers) => helpers.eq(scores.playerId, userId)
-        }
-      },
-      orderBy: (sessions, helpers) => [helpers.desc(sessions.startTime)]
-    });
+  async createGameSession(session: InsertGameSession): Promise<GameSession> {
+    const id = this.currentIds.sessions++;
+    const newSession: GameSession = { ...session, id };
+    this.sessions.set(id, newSession);
+    return newSession;
+  }
+
+  async getGameSession(id: number): Promise<GameSession | undefined> {
+    return this.sessions.get(id);
+  }
+
+  async completeGameSession(id: number): Promise<GameSession> {
+    const session = await this.getGameSession(id);
+    if (!session) throw new Error("Session not found");
+    
+    const completedSession: GameSession = {
+      ...session,
+      endTime: new Date(),
+      isComplete: true
+    };
+    this.sessions.set(id, completedSession);
+    return completedSession;
+  }
+
+  async addScore(score: InsertScore): Promise<Score> {
+    const id = this.currentIds.scores++;
+    const newScore: Score = { ...score, id };
+    this.scores.set(id, newScore);
+    return newScore;
+  }
+
+  async getSessionScores(sessionId: number): Promise<Score[]> {
+    return Array.from(this.scores.values()).filter(
+      score => score.sessionId === sessionId
+    );
+  }
+
+  async getPlayerScores(playerId: number): Promise<Score[]> {
+    return Array.from(this.scores.values()).filter(
+      score => score.playerId === playerId
+    );
   }
 }
 

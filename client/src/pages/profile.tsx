@@ -1,27 +1,19 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { StatsDisplay } from "@/components/stats-display";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { type User, type Score, type Game, type GameSession } from "@shared/schema";
-import { CalendarDays, Trophy, Users, Star } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-interface GameHistory extends GameSession {
-  game: Game;
-  scores: Score[];
-}
+import { type User, type Score } from "@shared/schema";
+import { CalendarDays } from "lucide-react";
 
 export default function Profile() {
-  const { data: gameHistory, isLoading: loadingHistory } = useQuery<GameHistory[]>({
-    queryKey: ["/api/users/1/history"]
+  const { data: scores, isLoading: loadingScores } = useQuery<Score[]>({
+    queryKey: ["/api/players/1/scores"] // Assuming logged in user has ID 1 for demo
   });
 
   const { data: user, isLoading: loadingUser } = useQuery<User>({
-    queryKey: ["/api/users/1"]
+    queryKey: ["/api/users/1"] // Assuming logged in user has ID 1 for demo
   });
 
-  if (loadingHistory || loadingUser) {
+  if (loadingScores || loadingUser) {
     return (
       <div className="container mx-auto px-4 pt-20">
         <div className="animate-pulse space-y-8">
@@ -48,68 +40,45 @@ export default function Profile() {
       : 0
   };
 
+  const recentGames = scores?.slice(0, 5) || [];
+
   return (
     <div className="container mx-auto px-4 pt-20">
-      <div className="flex items-center gap-4 mb-8">
-        <Avatar className="h-20 w-20">
-          <AvatarImage src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${user.username}`} />
-          <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
-        </Avatar>
-        <div>
-          <h1 className="text-4xl font-bold">{user.username}</h1>
-          <p className="text-muted-foreground">Member since 2023</p>
-        </div>
-      </div>
+      <h1 className="text-4xl font-bold mb-8">Player Profile</h1>
       
       <div className="space-y-8">
         <StatsDisplay stats={stats} />
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center space-x-2">
               <CalendarDays className="h-5 w-5" />
-              <span>Game History</span>
+              <span>Recent Games</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              {gameHistory?.map((history) => (
-                <Card key={history.id} className="bg-muted/50">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{history.game.name}</CardTitle>
-                      <span className="text-sm text-muted-foreground">
-                        {new Date(history.startTime).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        {history.scores.map((score) => (
-                          <div 
-                            key={score.id}
-                            className={cn(
-                              "p-3 rounded-lg",
-                              score.playerId === user.id ? "bg-primary/10" : "bg-muted"
-                            )}
-                          >
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-6 w-6">
-                                <AvatarImage src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=player${score.playerId}`} />
-                                <AvatarFallback>P{score.playerId}</AvatarFallback>
-                              </Avatar>
-                              <span className="font-medium">Player {score.playerId}</span>
-                            </div>
-                            <div className="text-2xl font-bold mt-2">{score.score}</div>
-                          </div>
-                        ))}
+            {recentGames.length > 0 ? (
+              <div className="space-y-4">
+                {recentGames.map((score) => (
+                  <div 
+                    key={score.id} 
+                    className="flex justify-between items-center border-b pb-2"
+                  >
+                    <div>
+                      <div className="font-medium">Game #{score.sessionId}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Round {score.round + 1}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    <div className="text-xl font-bold">{score.score}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-muted-foreground py-8">
+                No games played yet
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
