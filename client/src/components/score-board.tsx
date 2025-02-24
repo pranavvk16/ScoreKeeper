@@ -1,10 +1,19 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, IconButton, Button, TextField, Typography, Box, Paper, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Alert, LinearProgress } from "@mui/material";
-import { EmojiEvents, ChevronLeft, ChevronRight, Star, EmojiEventsOutlined, Add, VisibilityOff, Visibility } from "@mui/icons-material";
+import { useState, useEffect, useMemo } from "react";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Trophy, ChevronRight, ChevronLeft, Star, Crown, Undo2, Redo2, Plus, Minus, RotateCcw, TrendingUp, Filter, Eye, EyeOff } from "lucide-react";
 import { type Game } from "@shared/schema";
-import { useForm } from "react-hook-form";
+import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 
 interface Player {
   id: number;
@@ -39,6 +48,7 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
   const [showScoreLimitDialog, setShowScoreLimitDialog] = useState(true);
   const [showEndGamePrompt, setShowEndGamePrompt] = useState(false);
   const [notification, setNotification] = useState('');
+  const { toast } = useToast();
 
   const form = useForm<RoundScoreForm>({
     resolver: zodResolver(roundScoreSchema),
@@ -74,9 +84,11 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
       }))
     });
 
+    // Show round completion animation
     setNotification(`Round ${currentRound + 1} Complete!`);
     setTimeout(() => setNotification(''), 2000);
 
+    // Check score limit
     if (scoreLimit) {
       const playerOverLimit = players.find(p => p.total >= scoreLimit);
       if (playerOverLimit) {
@@ -86,143 +98,149 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
   };
 
   return (
-    <Box sx={{ maxWidth: 'xl', mx: 'auto', p: 2 }}>
-      <Dialog open={showScoreLimitDialog} onClose={() => setShowScoreLimitDialog(false)}>
-        <DialogTitle>Set Score Limit (Optional)</DialogTitle>
+    <>
+      <Dialog open={showScoreLimitDialog} onOpenChange={setShowScoreLimitDialog}>
         <DialogContent>
-          <TextField
-            type="number"
-            label="Score Limit"
-            fullWidth
-            margin="normal"
-            onChange={(e) => handleScoreLimitSubmit(Number(e.target.value))}
-          />
+          <DialogHeader>
+            <DialogTitle>Set Score Limit (Optional)</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Input
+              type="number"
+              placeholder="Enter score limit"
+              onChange={(e) => handleScoreLimitSubmit(Number(e.target.value))}
+            />
+            <Button onClick={() => setShowScoreLimitDialog(false)}>
+              Skip
+            </Button>
+          </div>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowScoreLimitDialog(false)}>Skip</Button>
-        </DialogActions>
       </Dialog>
 
-      <Dialog open={showEndGamePrompt} onClose={() => setShowEndGamePrompt(false)}>
-        <DialogTitle>Score Limit Reached</DialogTitle>
+      <Dialog open={showEndGamePrompt} onOpenChange={setShowEndGamePrompt}>
         <DialogContent>
-          <Typography>A player has reached the score limit. Would you like to end the game?</Typography>
+          <DialogHeader>
+            <DialogTitle>Score Limit Reached</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p>A player has reached the score limit. Would you like to end the game?</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEndGamePrompt(false)}>
+              Continue Playing
+            </Button>
+            <Button onClick={onEndGame}>
+              End Game
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowEndGamePrompt(false)}>Continue Playing</Button>
-          <Button variant="contained" onClick={onEndGame} color="primary">End Game</Button>
-        </DialogActions>
       </Dialog>
 
-      <Card elevation={2}>
-        <CardHeader
-          title={
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <EmojiEvents color="primary" />
-                <Typography variant="h6">Round {currentRound + 1}</Typography>
-              </Stack>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={showRunningTotal ? <VisibilityOff /> : <Visibility />}
-                  onClick={() => setShowRunningTotal(!showRunningTotal)}
-                >
-                  {showRunningTotal ? "Hide Total" : "Show Total"}
-                </Button>
-                <Button
-                  variant="contained"
-                  color="error"
-                  size="small"
-                  onClick={onEndGame}
-                >
-                  End Game
-                </Button>
-              </Stack>
-            </Box>
-          }
-        />
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardHeader>
+          <CardTitle className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-6 w-6 text-primary" />
+              <span>Round {currentRound + 1}</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowRunningTotal(!showRunningTotal)}
+              >
+                {showRunningTotal ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+                {showRunningTotal ? "Hide Total" : "Show Total"}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={onEndGame}
+                size="sm"
+              >
+                End Game
+              </Button>
+            </div>
+          </CardTitle>
+        </CardHeader>
 
         <CardContent>
-          <form onSubmit={form.handleSubmit(handleRoundSubmit)}>
-            <Stack spacing={2}>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleRoundSubmit)} className="space-y-4">
               {sortedPlayers.map((player, index) => (
-                <Paper
+                <div
                   key={player.id}
-                  elevation={1}
-                  sx={{
-                    p: 2,
-                    bgcolor: index === 0 ? 'warning.light' :
-                             index === 1 ? 'grey.100' :
-                             index === 2 ? 'warning.100' : 'background.default'
-                  }}
+                  className={`flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-lg ${
+                    index === 0 ? 'bg-yellow-100 dark:bg-yellow-900/20' :
+                    index === 1 ? 'bg-gray-100 dark:bg-gray-800/50' :
+                    index === 2 ? 'bg-amber-100 dark:bg-amber-900/20' :
+                    'bg-muted/50'
+                  }`}
                 >
-                  <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'start', sm: 'center' }, gap: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, gap: 1 }}>
-                      <Box sx={{ width: 40, display: 'flex', justifyContent: 'center' }}>
-                        {index === 0 ? <EmojiEvents sx={{ color: 'warning.dark' }} /> :
-                         index === 1 ? <Star sx={{ color: 'grey.500' }} /> :
-                         index === 2 ? <EmojiEventsOutlined sx={{ color: 'warning.main' }} /> :
-                         <Typography variant="body1" fontWeight="bold">{index + 1}</Typography>}
-                      </Box>
-                      <Box>
-                        <Typography variant="subtitle1">{player.name}</Typography>
-                        {showRunningTotal && (
-                          <Typography variant="caption" color="text.secondary">
-                            Total: {player.total}
-                          </Typography>
-                        )}
-                      </Box>
-                    </Box>
-                    <TextField
-                      {...form.register(`scores.${index}.score`)}
-                      type="number"
-                      label="Score"
-                      size="small"
-                      error={!!form.formState.errors.scores?.[index]?.score}
-                      helperText={form.formState.errors.scores?.[index]?.score?.message}
-                      sx={{ width: { xs: '100%', sm: 120 } }}
-                    />
-                  </Box>
-                </Paper>
+                  <div className="flex items-center gap-2 flex-1">
+                    <div className="w-8 flex justify-center">
+                      {index === 0 ? <Crown className="h-6 w-6 text-yellow-500" /> :
+                       index === 1 ? <Star className="h-6 w-6 text-gray-400" /> :
+                       index === 2 ? <Star className="h-6 w-6 text-amber-700" /> :
+                       <span className="text-lg font-bold">{index + 1}</span>}
+                    </div>
+                    <div>
+                      <div className="font-medium">{player.name}</div>
+                      {showRunningTotal && (
+                        <div className="text-sm text-muted-foreground">
+                          Total: {player.total}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name={`scores.${index}.score`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="number"
+                            placeholder="Score"
+                            className="w-24"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
               ))}
-              <Box sx={{ display: 'flex', justifyContent: 'center', pt: 2 }}>
-                <Button type="submit" variant="contained" size="large">
+              <div className="flex justify-center pt-4">
+                <Button type="submit" size="lg">
                   Conclude Round
                 </Button>
-              </Box>
-            </Stack>
-          </form>
+              </div>
+            </form>
+          </Form>
 
           {notification && (
-            <Alert
-              severity="success"
-              sx={{
-                position: 'fixed',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                zIndex: 1500,
-              }}
-            >
-              {notification}
-            </Alert>
+            <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+              <Alert className="bg-primary text-primary-foreground animate-in slide-in-from-top-1/2 fade-in">
+                <AlertDescription className="text-lg font-semibold">
+                  {notification}
+                </AlertDescription>
+              </Alert>
+            </div>
           )}
         </CardContent>
 
-        <Box sx={{ borderTop: 1, borderColor: 'divider', p: 2 }}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr 1fr 1fr' }, gap: 1 }}>
-            <Typography variant="body2" color="text.secondary">Round: {currentRound + 1}</Typography>
-            <Typography variant="body2" color="text.secondary" textAlign="center">
+        <CardFooter className="border-t pt-4">
+          <div className="w-full grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm text-muted-foreground">
+            <div>Round: {currentRound + 1}</div>
+            <div className="text-center">
               {scoreLimit ? `Score Limit: ${scoreLimit}` : 'No Score Limit'}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" textAlign="right">
+            </div>
+            <div className="text-right">
               {game.highestWins ? "Highest Wins" : "Lowest Wins"}
-            </Typography>
-          </Box>
-        </Box>
+            </div>
+          </div>
+        </CardFooter>
       </Card>
-    </Box>
+    </>
   );
 }
