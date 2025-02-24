@@ -1,5 +1,6 @@
 import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
+import { relations } from "drizzle-orm";
 import { z } from "zod";
 
 export const users = pgTable("users", {
@@ -26,7 +27,7 @@ export const games = pgTable("games", {
 
 export const gameSessions = pgTable("game_sessions", {
   id: serial("id").primaryKey(),
-  gameId: integer("game_id").notNull(),
+  gameId: integer("game_id").notNull().references(() => games.id),
   startTime: timestamp("start_time").defaultNow().notNull(),
   endTime: timestamp("end_time"),
   isComplete: boolean("is_complete").default(false),
@@ -35,12 +36,36 @@ export const gameSessions = pgTable("game_sessions", {
 
 export const scores = pgTable("scores", {
   id: serial("id").primaryKey(),
-  sessionId: integer("session_id").notNull(),
-  playerId: integer("player_id").notNull(),
+  sessionId: integer("session_id").notNull().references(() => gameSessions.id),
+  playerId: integer("player_id").notNull().references(() => users.id),
   score: integer("score").notNull(),
   round: integer("round").notNull(),
   roundStats: jsonb("round_stats").default({}).notNull(),
 });
+
+// Define relations
+export const gamesRelations = relations(games, ({ many }) => ({
+  sessions: many(gameSessions),
+}));
+
+export const gameSessionsRelations = relations(gameSessions, ({ one, many }) => ({
+  game: one(games, {
+    fields: [gameSessions.gameId],
+    references: [games.id],
+  }),
+  scores: many(scores),
+}));
+
+export const scoresRelations = relations(scores, ({ one }) => ({
+  session: one(gameSessions, {
+    fields: [scores.sessionId],
+    references: [gameSessions.id],
+  }),
+  player: one(users, {
+    fields: [scores.playerId],
+    references: [users.id],
+  }),
+}));
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
