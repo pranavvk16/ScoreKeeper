@@ -192,7 +192,7 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
     onScoreSubmit(lastUndo.playerId, lastUndo.score);
   };
 
-  // New feature: Reset game function
+  // Reset game function
   const handleResetGame = () => {
     if (onResetGame) {
       setCurrentRound(0);
@@ -410,7 +410,7 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
                 </div>
               </div>
               <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
-                <form onSubmit={form.handleSubmit(data => handleScoreSubmit(player.id, data.score))}>
+                <form onSubmit={form.handleSubmit(data => handleScoreSubmit(player.id))}>
                   <div className="flex items-center gap-2">
                     <Input
                       type="number"
