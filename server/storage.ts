@@ -21,7 +21,6 @@ export interface IStorage {
   createGameSession(session: InsertGameSession): Promise<GameSession>;
   getGameSession(id: number): Promise<GameSession | undefined>;
   completeGameSession(id: number): Promise<GameSession>;
-  getUserGameHistory(userId: number): Promise<(GameSession & { game: Game, scores: Score[] })[]>;
 
   // Score operations
   addScore(score: InsertScore): Promise<Score>;
@@ -159,11 +158,11 @@ export class MemStorage implements IStorage {
   async updateUserStats(userId: number, won: boolean): Promise<User> {
     const user = await this.getUser(userId);
     if (!user) throw new Error("User not found");
-
+    
     const updatedUser: User = {
       ...user,
-      gamesPlayed: (user.gamesPlayed || 0) + 1,
-      gamesWon: (user.gamesWon || 0) + (won ? 1 : 0)
+      gamesPlayed: user.gamesPlayed + 1,
+      gamesWon: user.gamesWon + (won ? 1 : 0)
     };
     this.users.set(userId, updatedUser);
     return updatedUser;
@@ -179,20 +178,14 @@ export class MemStorage implements IStorage {
 
   async createGame(game: InsertGame): Promise<Game> {
     const id = this.currentIds.games++;
-    const newGame: Game = { ...game, id, isCustom: game.isCustom ?? false };
+    const newGame: Game = { ...game, id };
     this.games.set(id, newGame);
     return newGame;
   }
 
   async createGameSession(session: InsertGameSession): Promise<GameSession> {
     const id = this.currentIds.sessions++;
-    const newSession: GameSession = { 
-      ...session, 
-      id,
-      startTime: new Date(),
-      endTime: null,
-      isComplete: false
-    };
+    const newSession: GameSession = { ...session, id };
     this.sessions.set(id, newSession);
     return newSession;
   }
@@ -204,7 +197,7 @@ export class MemStorage implements IStorage {
   async completeGameSession(id: number): Promise<GameSession> {
     const session = await this.getGameSession(id);
     if (!session) throw new Error("Session not found");
-
+    
     const completedSession: GameSession = {
       ...session,
       endTime: new Date(),
@@ -212,31 +205,6 @@ export class MemStorage implements IStorage {
     };
     this.sessions.set(id, completedSession);
     return completedSession;
-  }
-
-  async getUserGameHistory(userId: number): Promise<(GameSession & { game: Game, scores: Score[] })[]> {
-    const sessions = Array.from(this.sessions.values());
-    const userSessions = [];
-
-    for (const session of sessions) {
-      const scores = await this.getSessionScores(session.id);
-      const userScores = scores.filter(score => score.playerId === userId);
-
-      if (userScores.length > 0) {
-        const game = await this.getGame(session.gameId);
-        if (game) {
-          userSessions.push({
-            ...session,
-            game,
-            scores: userScores
-          });
-        }
-      }
-    }
-
-    return userSessions.sort((a, b) => 
-      new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
-    );
   }
 
   async addScore(score: InsertScore): Promise<Score> {
@@ -260,3 +228,15 @@ export class MemStorage implements IStorage {
 }
 
 export const storage = new MemStorage();
+  // async getUserGameHistory(userId: number) {
+  //   const sessions = await db.query.gameSessions.findMany({
+  //     with: {
+  //       game: true,
+  //       scores: {
+  //         where: (scores, { eq }) => eq(scores.playerId, userId)
+  //       }
+  //     },
+  //     orderBy: (sessions, { desc }) => [desc(sessions.startTime)]
+  //   });
+  //   return sessions;
+  // }
