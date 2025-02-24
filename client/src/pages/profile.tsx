@@ -1,13 +1,11 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { StatsDisplay } from "@/components/stats-display";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { type User, type Score, type Game, type GameSession } from "@shared/schema";
-import { CalendarDays, Trophy, Users, Star, Gamepad2 } from "lucide-react";
+import { CalendarDays, Trophy, Users, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MemoryGame } from "@/components/memory-game";
 
 interface GameHistory extends GameSession {
   game: Game;
@@ -43,114 +41,77 @@ export default function Profile() {
   }
 
   const stats = {
-    gamesPlayed: user.gamesPlayed || 0,
-    gamesWon: user.gamesWon || 0,
-    winRate: user.gamesPlayed ? ((user.gamesWon || 0) / user.gamesPlayed) * 100 : 0
+    gamesPlayed: user.gamesPlayed,
+    gamesWon: user.gamesWon,
+    winRate: user.gamesPlayed > 0 
+      ? (user.gamesWon / user.gamesPlayed) * 100 
+      : 0
   };
 
   return (
     <div className="container mx-auto px-4 pt-20">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <div className="flex items-center gap-4 mb-8">
-          <Avatar className="h-20 w-20">
-            <AvatarImage src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${user.username}`} />
-            <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <div>
-            <h1 className="text-4xl font-bold">{user.username}</h1>
-            <p className="text-muted-foreground">Member since {new Date(user.createdAt || '').getFullYear()}</p>
-          </div>
+      <div className="flex items-center gap-4 mb-8">
+        <Avatar className="h-20 w-20">
+          <AvatarImage src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${user.username}`} />
+          <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+        </Avatar>
+        <div>
+          <h1 className="text-4xl font-bold">{user.username}</h1>
+          <p className="text-muted-foreground">Member since 2023</p>
         </div>
-      </motion.div>
-
+      </div>
+      
       <div className="space-y-8">
         <StatsDisplay stats={stats} />
 
-        <Tabs defaultValue="history" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="history">Game History</TabsTrigger>
-            <TabsTrigger value="minigames">Mini Games</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="history">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CalendarDays className="h-5 w-5" />
-                  <span>Game History</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {gameHistory?.map((history) => (
-                    <motion.div
-                      key={history.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <Card className="bg-muted/50 transform transition-all hover:scale-[1.02]">
-                        <CardHeader>
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg flex items-center gap-2">
-                              <Trophy className="h-5 w-5 text-primary" />
-                              {history.game.name}
-                            </CardTitle>
-                            <span className="text-sm text-muted-foreground">
-                              {new Date(history.startTime).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                              {history.scores.map((score) => (
-                                <div 
-                                  key={score.id}
-                                  className={cn(
-                                    "p-3 rounded-lg transition-colors",
-                                    score.playerId === user.id ? "bg-primary/10" : "bg-muted"
-                                  )}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <Avatar className="h-6 w-6">
-                                      <AvatarImage src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=player${score.playerId}`} />
-                                      <AvatarFallback>P{score.playerId}</AvatarFallback>
-                                    </Avatar>
-                                    <span className="font-medium">Player {score.playerId}</span>
-                                  </div>
-                                  <div className="text-2xl font-bold mt-2">{score.score}</div>
-                                </div>
-                              ))}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5" />
+              <span>Game History</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {gameHistory?.map((history) => (
+                <Card key={history.id} className="bg-muted/50">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">{history.game.name}</CardTitle>
+                      <span className="text-sm text-muted-foreground">
+                        {new Date(history.startTime).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        {history.scores.map((score) => (
+                          <div 
+                            key={score.id}
+                            className={cn(
+                              "p-3 rounded-lg",
+                              score.playerId === user.id ? "bg-primary/10" : "bg-muted"
+                            )}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=player${score.playerId}`} />
+                                <AvatarFallback>P{score.playerId}</AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium">Player {score.playerId}</span>
                             </div>
+                            <div className="text-2xl font-bold mt-2">{score.score}</div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="minigames">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Gamepad2 className="h-5 w-5" />
-                  <span>Mini Games</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <MemoryGame />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

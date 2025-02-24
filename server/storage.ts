@@ -2,11 +2,8 @@ import {
   type User, type InsertUser,
   type Game, type InsertGame,
   type GameSession, type InsertGameSession,
-  type Score, type InsertScore,
-  users, games, gameSessions, scores
+  type Score, type InsertScore
 } from "@shared/schema";
-import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -14,7 +11,6 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserStats(userId: number, won: boolean): Promise<User>;
-  getUserGameHistory(userId: number): Promise<any[]>;
 
   // Game operations
   getGames(): Promise<Game[]>;
@@ -32,173 +28,215 @@ export interface IStorage {
   getPlayerScores(playerId: number): Promise<Score[]>;
 }
 
-export class DatabaseStorage implements IStorage {
+export class MemStorage implements IStorage {
+  private users: Map<number, User>;
+  private games: Map<number, Game>;
+  private sessions: Map<number, GameSession>;
+  private scores: Map<number, Score>;
+  private currentIds: { [key: string]: number };
+
+  constructor() {
+    this.users = new Map();
+    this.games = new Map();
+    this.sessions = new Map();
+    this.scores = new Map();
+    this.currentIds = { users: 1, games: 1, sessions: 1, scores: 1 };
+
+    // Add default games
+    this.initializeDefaultGames();
+  }
+
+  private initializeDefaultGames() {
+    const defaultGames: InsertGame[] = [
+      {
+        name: "Poker",
+        description: "Texas Hold'em poker scoring",
+        maxPlayers: 10,
+        minPlayers: 2,
+        highestWins: true,
+        isCustom: false
+      },
+      {
+        name: "UNO",
+        description: "Classic UNO card game",
+        maxPlayers: 10,
+        minPlayers: 2,
+        highestWins: false,
+        isCustom: false
+      },
+      {
+        name: "Scrabble",
+        description: "Word building board game",
+        maxPlayers: 4,
+        minPlayers: 2,
+        highestWins: true,
+        isCustom: false
+      },
+      {
+        name: "Yahtzee",
+        description: "Dice rolling and scoring game",
+        maxPlayers: 8,
+        minPlayers: 1,
+        highestWins: true,
+        isCustom: false
+      },
+      {
+        name: "Hearts",
+        description: "Classic Hearts card game",
+        maxPlayers: 4,
+        minPlayers: 3,
+        highestWins: false,
+        isCustom: false
+      },
+      {
+        name: "Rummy",
+        description: "Card matching and set collection",
+        maxPlayers: 6,
+        minPlayers: 2,
+        highestWins: true,
+        isCustom: false
+      },
+      {
+        name: "Bowling",
+        description: "Ten-pin bowling scoring",
+        maxPlayers: 8,
+        minPlayers: 1,
+        highestWins: true,
+        isCustom: false
+      },
+      {
+        name: "Darts",
+        description: "Classic darts scoring",
+        maxPlayers: 8,
+        minPlayers: 1,
+        highestWins: true,
+        isCustom: false
+      },
+      {
+        name: "Bridge",
+        description: "Contract bridge scoring",
+        maxPlayers: 4,
+        minPlayers: 4,
+        highestWins: true,
+        isCustom: false
+      },
+      {
+        name: "Golf",
+        description: "Golf card game scoring",
+        maxPlayers: 8,
+        minPlayers: 2,
+        highestWins: false,
+        isCustom: false
+      }
+    ];
+
+    defaultGames.forEach(game => this.createGame(game));
+  }
+
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    return this.users.get(id);
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+    return Array.from(this.users.values()).find(
+      (user) => user.username === username
+    );
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
+    const id = this.currentIds.users++;
+    const user: User = { 
+      ...insertUser, 
+      id,
+      gamesPlayed: 0,
+      gamesWon: 0
+    };
+    this.users.set(id, user);
     return user;
   }
 
   async updateUserStats(userId: number, won: boolean): Promise<User> {
-    const [user] = await db
-      .update(users)
-      .set({
-        gamesPlayed: (u: any) => (u.gamesPlayed || 0) + 1,
-        gamesWon: (u: any) => won ? (u.gamesWon || 0) + 1 : u.gamesWon || 0,
-      })
-      .where(eq(users.id, userId))
-      .returning();
-    return user;
-  }
-
-  async getUserGameHistory(userId: number): Promise<any[]> {
-    const sessions = await db.query.gameSessions.findMany({
-      with: {
-        game: true,
-        scores: {
-          where: eq(scores.playerId, userId)
-        }
-      },
-      orderBy: desc(gameSessions.startTime)
-    });
-    return sessions;
+    const user = await this.getUser(userId);
+    if (!user) throw new Error("User not found");
+    
+    const updatedUser: User = {
+      ...user,
+      gamesPlayed: user.gamesPlayed + 1,
+      gamesWon: user.gamesWon + (won ? 1 : 0)
+    };
+    this.users.set(userId, updatedUser);
+    return updatedUser;
   }
 
   async getGames(): Promise<Game[]> {
-    // Only return round-based games
-    return db.select()
-      .from(games)
-      .where(eq(games.roundBased, true));
+    return Array.from(this.games.values());
   }
 
   async getGame(id: number): Promise<Game | undefined> {
-    const [game] = await db.select()
-      .from(games)
-      .where(and(
-        eq(games.id, id),
-        eq(games.roundBased, true)
-      ));
-    return game;
+    return this.games.get(id);
   }
 
   async createGame(game: InsertGame): Promise<Game> {
-    const [newGame] = await db.insert(games).values(game).returning();
+    const id = this.currentIds.games++;
+    const newGame: Game = { ...game, id };
+    this.games.set(id, newGame);
     return newGame;
   }
 
   async createGameSession(session: InsertGameSession): Promise<GameSession> {
-    const [newSession] = await db
-      .insert(gameSessions)
-      .values({
-        ...session,
-        startTime: new Date(),
-        isComplete: false,
-        performance: {
-          roundScores: [],
-          trends: [],
-          milestones: []
-        }
-      })
-      .returning();
+    const id = this.currentIds.sessions++;
+    const newSession: GameSession = { ...session, id };
+    this.sessions.set(id, newSession);
     return newSession;
   }
 
   async getGameSession(id: number): Promise<GameSession | undefined> {
-    const [session] = await db
-      .select()
-      .from(gameSessions)
-      .where(eq(gameSessions.id, id));
-    return session;
+    return this.sessions.get(id);
   }
 
   async completeGameSession(id: number): Promise<GameSession> {
     const session = await this.getGameSession(id);
-    const scores = await this.getSessionScores(id);
-
-    // Calculate performance metrics
-    const performance = {
-      roundScores: scores.map(s => ({ round: s.round, score: s.score })),
-      trends: this.calculateTrends(scores),
-      milestones: this.calculateMilestones(scores)
+    if (!session) throw new Error("Session not found");
+    
+    const completedSession: GameSession = {
+      ...session,
+      endTime: new Date(),
+      isComplete: true
     };
-
-    const [updatedSession] = await db
-      .update(gameSessions)
-      .set({
-        endTime: new Date(),
-        isComplete: true,
-        performance
-      })
-      .where(eq(gameSessions.id, id))
-      .returning();
-    return updatedSession;
-  }
-
-  private calculateTrends(scores: Score[]) {
-    const roundScores = scores.sort((a, b) => a.round - b.round);
-    const trends = [];
-
-    for (let i = 1; i < roundScores.length; i++) {
-      const trend = {
-        round: roundScores[i].round,
-        change: roundScores[i].score - roundScores[i-1].score,
-        percentage: ((roundScores[i].score - roundScores[i-1].score) / roundScores[i-1].score) * 100
-      };
-      trends.push(trend);
-    }
-
-    return trends;
-  }
-
-  private calculateMilestones(scores: Score[]) {
-    const milestones = [];
-    const maxScore = Math.max(...scores.map(s => s.score));
-    const averageScore = scores.reduce((acc, s) => acc + s.score, 0) / scores.length;
-
-    if (maxScore > averageScore * 1.5) {
-      milestones.push({ type: 'exceptional_round', score: maxScore });
-    }
-
-    // Add more milestone calculations as needed
-    return milestones;
+    this.sessions.set(id, completedSession);
+    return completedSession;
   }
 
   async addScore(score: InsertScore): Promise<Score> {
-    const [newScore] = await db.insert(scores)
-      .values({
-        ...score,
-        roundStats: {
-          timeSpent: 0, // You can add actual time tracking
-          attempts: 1,
-          bonuses: []
-        }
-      })
-      .returning();
+    const id = this.currentIds.scores++;
+    const newScore: Score = { ...score, id };
+    this.scores.set(id, newScore);
     return newScore;
   }
 
   async getSessionScores(sessionId: number): Promise<Score[]> {
-    return db
-      .select()
-      .from(scores)
-      .where(eq(scores.sessionId, sessionId));
+    return Array.from(this.scores.values()).filter(
+      score => score.sessionId === sessionId
+    );
   }
 
   async getPlayerScores(playerId: number): Promise<Score[]> {
-    return db
-      .select()
-      .from(scores)
-      .where(eq(scores.playerId, playerId));
+    return Array.from(this.scores.values()).filter(
+      score => score.playerId === playerId
+    );
   }
 }
 
-export const storage = new DatabaseStorage();
+export const storage = new MemStorage();
+  // async getUserGameHistory(userId: number) {
+  //   const sessions = await db.query.gameSessions.findMany({
+  //     with: {
+  //       game: true,
+  //       scores: {
+  //         where: (scores, { eq }) => eq(scores.playerId, userId)
+  //       }
+  //     },
+  //     orderBy: (sessions, { desc }) => [desc(sessions.startTime)]
+  //   });
+  //   return sessions;
+  // }

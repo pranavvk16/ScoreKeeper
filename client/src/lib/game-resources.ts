@@ -9,41 +9,22 @@ interface GameResource {
 }
 
 export const gameResources: Record<string, GameResource> = {
-  "Darts": {
-    wikihow: "https://www.wikihow.com/Play-Darts",
+  "Poker": {
+    wikihow: "https://www.wikihow.com/Play-Poker",
     youtube: [
-      "https://www.youtube.com/watch?v=yooXCn8vX_U",
-      "https://www.youtube.com/watch?v=p1yJOkPmRhk"
+      "https://www.youtube.com/watch?v=GAoR9ji8D6A",
+      "https://www.youtube.com/watch?v=UE7wGTC8S_c"
     ],
     additionalResources: [
       {
-        title: "Official Darts Rules",
-        url: "https://www.dartboard.com/pages/darts-rules",
-        description: "Complete guide to dart scoring and rules"
+        title: "Poker Strategy Guide",
+        url: "https://www.pokernews.com/strategy/",
+        description: "Comprehensive poker strategy articles and tips"
       },
       {
-        title: "Darts Scoring Guide",
-        url: "https://www.darting.com/Darts-Rules/",
-        description: "Learn how to keep score in darts"
-      }
-    ]
-  },
-  "Carrom": {
-    wikihow: "https://www.wikihow.com/Play-Carrom",
-    youtube: [
-      "https://www.youtube.com/watch?v=LhFrJxI6Umo",
-      "https://www.youtube.com/watch?v=vEtQHLDAfNg"
-    ],
-    additionalResources: [
-      {
-        title: "Official Carrom Rules",
-        url: "https://www.icf.org.in/rules-regulations",
-        description: "International Carrom Federation official rules"
-      },
-      {
-        title: "Carrom Techniques",
-        url: "https://www.carrom.org/techniques",
-        description: "Advanced techniques and strategies"
+        title: "Official Poker Rules",
+        url: "https://www.pokerstars.com/poker/games/rules/",
+        description: "Official poker hand rankings and game rules"
       }
     ]
   },
@@ -58,6 +39,25 @@ export const gameResources: Record<string, GameResource> = {
         title: "Official UNO Rules",
         url: "https://www.mattel.com/en-us/uno",
         description: "Official rules from Mattel"
+      }
+    ]
+  },
+  "Scrabble": {
+    wikihow: "https://www.wikihow.com/Play-Scrabble",
+    youtube: [
+      "https://www.youtube.com/watch?v=GEk9JqhY7Pc",
+      "https://www.youtube.com/watch?v=YE3WdlK-Dn8"
+    ],
+    additionalResources: [
+      {
+        title: "Scrabble Word Finder",
+        url: "https://scrabble.merriam.com/",
+        description: "Official Scrabble dictionary and word finder"
+      },
+      {
+        title: "Scrabble Tips",
+        url: "https://www.scrabblepages.com/scrabble/tips/",
+        description: "Strategy guides and tips for better play"
       }
     ]
   },
@@ -100,6 +100,62 @@ export const gameResources: Record<string, GameResource> = {
         title: "Rummy Rules",
         url: "https://bicyclecards.com/how-to-play/rummy-rum/",
         description: "Official Bicycle Cards rummy rules"
+      }
+    ]
+  },
+  "Bowling": {
+    wikihow: "https://www.wikihow.com/Bowl",
+    youtube: [
+      "https://www.youtube.com/watch?v=QZ23LKBLbvw",
+      "https://www.youtube.com/watch?v=7PCA1Th6UqY"
+    ],
+    additionalResources: [
+      {
+        title: "Bowling Tips",
+        url: "https://www.bowl.com/Tips/",
+        description: "Tips and techniques from professional bowlers"
+      }
+    ]
+  },
+  "Darts": {
+    wikihow: "https://www.wikihow.com/Play-Darts",
+    youtube: [
+      "https://www.youtube.com/watch?v=yooXCn8vX_U",
+      "https://www.youtube.com/watch?v=p1yJOkPmRhk"
+    ],
+    additionalResources: [
+      {
+        title: "Official Darts Rules",
+        url: "https://www.dartboard.com/pages/darts-rules",
+        description: "Comprehensive darts rules and scoring"
+      }
+    ]
+  },
+  "Bridge": {
+    wikihow: "https://www.wikihow.com/Play-Bridge",
+    youtube: [
+      "https://www.youtube.com/watch?v=UxNwj_UCB9c",
+      "https://www.youtube.com/watch?v=nB0ImYBY5Y4"
+    ],
+    additionalResources: [
+      {
+        title: "Learn Bridge Online",
+        url: "https://www.acbl.org/learn/",
+        description: "American Contract Bridge League learning resources"
+      }
+    ]
+  },
+  "Golf": {
+    wikihow: "https://www.wikihow.com/Play-Golf-Card-Game",
+    youtube: [
+      "https://www.youtube.com/watch?v=OxhZ7jEkI7Q",
+      "https://www.youtube.com/watch?v=M3_8QvJ3Xkc"
+    ],
+    additionalResources: [
+      {
+        title: "Golf Card Game Rules",
+        url: "https://bicyclecards.com/how-to-play/golf/",
+        description: "Official Bicycle Cards golf rules"
       }
     ]
   }
