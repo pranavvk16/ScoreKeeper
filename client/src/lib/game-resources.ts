@@ -9,22 +9,41 @@ interface GameResource {
 }
 
 export const gameResources: Record<string, GameResource> = {
-  "Poker": {
-    wikihow: "https://www.wikihow.com/Play-Poker",
+  "Darts": {
+    wikihow: "https://www.wikihow.com/Play-Darts",
     youtube: [
-      "https://www.youtube.com/watch?v=GAoR9ji8D6A",
-      "https://www.youtube.com/watch?v=UE7wGTC8S_c"
+      "https://www.youtube.com/watch?v=yooXCn8vX_U",
+      "https://www.youtube.com/watch?v=p1yJOkPmRhk"
     ],
     additionalResources: [
       {
-        title: "Poker Strategy Guide",
-        url: "https://www.pokernews.com/strategy/",
-        description: "Comprehensive poker strategy articles and tips"
+        title: "Official Darts Rules",
+        url: "https://www.dartboard.com/pages/darts-rules",
+        description: "Complete guide to dart scoring and rules"
       },
       {
-        title: "Official Poker Rules",
-        url: "https://www.pokerstars.com/poker/games/rules/",
-        description: "Official poker hand rankings and game rules"
+        title: "Darts Scoring Guide",
+        url: "https://www.darting.com/Darts-Rules/",
+        description: "Learn how to keep score in darts"
+      }
+    ]
+  },
+  "Carrom": {
+    wikihow: "https://www.wikihow.com/Play-Carrom",
+    youtube: [
+      "https://www.youtube.com/watch?v=LhFrJxI6Umo",
+      "https://www.youtube.com/watch?v=vEtQHLDAfNg"
+    ],
+    additionalResources: [
+      {
+        title: "Official Carrom Rules",
+        url: "https://www.icf.org.in/rules-regulations",
+        description: "International Carrom Federation official rules"
+      },
+      {
+        title: "Carrom Techniques",
+        url: "https://www.carrom.org/techniques",
+        description: "Advanced techniques and strategies"
       }
     ]
   },
