@@ -50,14 +50,19 @@ const gameGuides = {
   "Poker": "https://www.wikihow.com/Play-Poker",
   "Chess": "https://www.wikihow.com/Play-Chess",
   "Monopoly": "https://www.wikihow.com/Play-Monopoly",
-  // Add more games and their guides
 };
 
-const scoreFormSchema = z.object({
-  score: z.number()
-    .min(-1000, "Score too low!")
-    .max(1000, "Easy there, champion! That's a bit too high."),
-});
+// Create a dynamic form schema based on players
+const createRoundFormSchema = (players: Player[], scoreLimit?: number) => {
+  const playerScores = players.reduce((acc, player) => {
+    acc[`player_${player.id}`] = z.number()
+      .min(-1000, "Score too low!")
+      .max(scoreLimit || 1000, `Score cannot exceed ${scoreLimit || 1000}`);
+    return acc;
+  }, {} as Record<string, z.ZodNumber>);
+
+  return z.object(playerScores);
+};
 
 export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGame, scoreLimit }: ScoreBoardProps) {
   const [currentRound, setCurrentRound] = useState(0);
@@ -69,18 +74,21 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
   const [showStats, setShowStats] = useState(false);
   const [currentFunFact, setCurrentFunFact] = useState(funFacts[0]);
 
+  // Create form schema for the current round
+  const roundFormSchema = createRoundFormSchema(players, scoreLimit);
+
   const form = useForm({
-    resolver: zodResolver(scoreFormSchema),
-    defaultValues: {
-      score: 0,
-    },
+    resolver: zodResolver(roundFormSchema),
+    defaultValues: players.reduce((acc, player) => {
+      acc[`player_${player.id}`] = 0;
+      return acc;
+    }, {} as Record<string, number>),
   });
 
   useEffect(() => {
     const maxRoundInScores = Math.max(...players.map(p => p.scores.length), 0);
     setLastRound(maxRoundInScores);
 
-    // Rotate fun facts every 10 seconds
     const interval = setInterval(() => {
       setCurrentFunFact(prev => {
         const nextIndex = (funFacts.indexOf(prev) + 1) % funFacts.length;
@@ -95,7 +103,6 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
     game.highestWins ? b.total - a.total : a.total - b.total
   );
 
-  // Win prediction based on current scores and trends
   const winPrediction = useMemo(() => {
     if (players.length < 2 || !players[0].scores.length) return null;
 
@@ -116,7 +123,6 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
     return predictions.sort((a, b) => b.winChance - a.winChance)[0];
   }, [players]);
 
-  // Player statistics with performance metrics
   const playerStats = useMemo(() => {
     return players.map(player => ({
       id: player.id,
@@ -134,42 +140,37 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
     }));
   }, [players]);
 
-  const handleScoreSubmit = (playerId: number) => {
-    form.handleSubmit((data) => {
-      if (scoreLimit && Math.abs(data.score) > scoreLimit) {
-        setNotification(`Score exceeds the limit of ${scoreLimit}! 🚫`);
-        return;
-      }
+  const concludeRound = (formData: Record<string, number>) => {
+    const newScores: ScoreAction[] = [];
 
-      const finalScore = scoreType === 'penalty' ? -Math.abs(data.score) : data.score;
-      const action: ScoreAction = {
+    Object.entries(formData).forEach(([key, score]) => {
+      const playerId = parseInt(key.split('_')[1]);
+      const finalScore = scoreType === 'penalty' ? -Math.abs(score) : score;
+
+      newScores.push({
         playerId,
         score: finalScore,
         round: currentRound,
         type: scoreType
-      };
+      });
 
       onScoreSubmit(playerId, finalScore);
-      setScoreHistory(prev => [...prev, action]);
-      setUndoHistory([]);
-      form.reset();
+    });
 
-      const allScoresSubmitted = players.every(p =>
-        p.scores.length > currentRound || p.id === playerId
-      );
+    setScoreHistory(prev => [...prev, ...newScores]);
+    setUndoHistory([]);
+    form.reset();
 
-      if (allScoresSubmitted) {
-        setCurrentRound(prev => prev + 1);
-        showRoundWinner(currentRound);
-      }
+    // Fun messages based on scores
+    const highestScore = Math.max(...Object.values(formData));
+    if (highestScore > 50) {
+      setNotification("Someone's on fire! 🔥");
+    } else if (highestScore === 0) {
+      setNotification("A round of zeros? Tough crowd! 🎲");
+    }
 
-      // Add fun messages based on score
-      if (Math.abs(finalScore) > 50) {
-        setNotification("Wow! Someone's showing off! 🎯");
-      } else if (finalScore === 0) {
-        setNotification("Zero points? Better luck next time! 🎲");
-      }
-    })();
+    setCurrentRound(prev => prev + 1);
+    showRoundWinner(currentRound);
   };
 
   const handleUndo = () => {
@@ -192,27 +193,20 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
     onScoreSubmit(lastUndo.playerId, lastUndo.score);
   };
 
-  // Reset game function
   const handleResetGame = () => {
     if (onResetGame) {
       setCurrentRound(0);
       setScoreHistory([]);
       setUndoHistory([]);
       setNotification('');
+      form.reset();
       onResetGame();
     }
   };
 
-  const maxRound = Math.max(...players.map(p => p.scores.length), 0);
-  const canGoNext = currentRound < maxRound - 1;
-  const canGoPrev = currentRound > 0;
-
-  const playersWithScores = players.filter(p => p.scores[currentRound] !== undefined).length;
-  const roundProgress = (playersWithScores / players.length) * 100;
-
   const showRoundWinner = (round: number) => {
     const winner = sortedPlayers[0].name;
-    setNotification(`Round ${round + 1} Winner: ${winner}!`);
+    setNotification(`Round ${round + 1} Winner: ${winner}! 🏆`);
   };
 
   return (
@@ -223,97 +217,47 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
             <Trophy className="h-6 w-6 text-primary" />
             <span>Round {currentRound + 1}</span>
           </div>
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleUndo}
-                disabled={scoreHistory.length === 0}
-                title="Undo last score"
-              >
-                <Undo2 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleRedo}
-                disabled={undoHistory.length === 0}
-                title="Redo last undone score"
-              >
-                <Redo2 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleResetGame}
-                title="Reset game"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  setCurrentRound(r => Math.max(0, r - 1));
-                  showRoundWinner(currentRound - 1);
-                }}
-                disabled={!canGoPrev}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <div className="w-20 sm:w-32">
-                <Progress value={roundProgress} className="h-2" />
-              </div>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  setCurrentRound(r => Math.min(lastRound, r + 1));
-                  showRoundWinner(currentRound);
-                }}
-                disabled={!canGoNext || currentRound >= lastRound}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    title="View Statistics"
-                    onClick={() => setShowStats(true)}
-                  >
-                    <TrendingUp className="h-4 w-4" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Player Statistics</DialogTitle>
-                  </DialogHeader>
-                  <ScrollArea className="h-[300px]">
-                    <div className="space-y-4">
-                      {playerStats.map(stat => (
-                        <div key={stat.id} className="p-4 bg-muted/50 rounded-lg">
-                          <h3 className="font-medium">{stat.name}</h3>
-                          <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
-                            <div>Average Score: {stat.avgScore}</div>
-                            <div>Highest Score: {stat.highestScore}</div>
-                            <div>Lowest Score: {stat.lowestScore}</div>
-                            <div>Trend: {stat.trend}</div>
-                            <div>Consistency: {stat.consistency.toFixed(1)}%</div>
-                          </div>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleResetGame}
+              title="Reset game"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  title="View Statistics"
+                >
+                  <TrendingUp className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Player Statistics</DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="h-[300px]">
+                  <div className="space-y-4">
+                    {playerStats.map(stat => (
+                      <div key={stat.id} className="p-4 bg-muted/50 rounded-lg">
+                        <h3 className="font-medium">{stat.name}</h3>
+                        <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
+                          <div>Average Score: {stat.avgScore}</div>
+                          <div>Highest Score: {stat.highestScore}</div>
+                          <div>Lowest Score: {stat.lowestScore}</div>
+                          <div>Trend: {stat.trend}</div>
+                          <div>Consistency: {stat.consistency.toFixed(1)}%</div>
                         </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                </DialogContent>
-              </Dialog>
-            </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </DialogContent>
+            </Dialog>
             <Button
               variant="destructive"
               onClick={onEndGame}
@@ -358,6 +302,7 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
             <span>Score limit: {scoreLimit} points per round</span>
           </div>
         )}
+
         <div className="mb-4 flex flex-wrap justify-center gap-2">
           <Button
             variant={scoreType === 'regular' ? 'default' : 'outline'}
@@ -384,7 +329,7 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
           </Button>
         </div>
 
-        <div className="space-y-4">
+        <form onSubmit={form.handleSubmit(concludeRound)} className="space-y-4">
           {sortedPlayers.map((player, index) => (
             <div
               key={player.id}
@@ -410,32 +355,17 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
                 </div>
               </div>
               <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
-                <form onSubmit={form.handleSubmit(data => handleScoreSubmit(player.id))}>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      placeholder="Score"
-                      {...form.register("score")}
-                      className={`w-20 sm:w-24 ${
-                        scoreType === 'penalty' ? 'border-red-500' :
-                          scoreType === 'bonus' ? 'border-green-500' : ''
-                      }`}
-                      disabled={player.scores.length > currentRound}
-                    />
-                    <Button
-                      type="submit"
-                      variant="outline"
-                      disabled={player.scores.length > currentRound}
-                      className={`px-3 ${
-                        scoreType === 'penalty' ? 'text-red-500 hover:text-red-600' :
-                          scoreType === 'bonus' ? 'text-green-500 hover:text-green-600' : ''
-                      }`}
-                      size="sm"
-                    >
-                      Add
-                    </Button>
-                  </div>
-                </form>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Score"
+                    {...form.register(`player_${player.id}`, { valueAsNumber: true })}
+                    className={`w-20 sm:w-24 ${
+                      scoreType === 'penalty' ? 'border-red-500' :
+                        scoreType === 'bonus' ? 'border-green-500' : ''
+                    }`}
+                  />
+                </div>
                 <div className="text-right">
                   <div className="font-bold">{player.total}</div>
                   <div className="text-xs text-muted-foreground">Total</div>
@@ -443,7 +373,18 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
               </div>
             </div>
           ))}
-        </div>
+
+          <div className="flex justify-center mt-6">
+            <Button 
+              type="submit" 
+              size="lg"
+              className="bg-green-600 hover:bg-green-700 text-white font-bold"
+            >
+              Conclude Round
+            </Button>
+          </div>
+        </form>
+
         {notification && (
           <div className="text-center mt-4 p-2 bg-primary/10 rounded-lg animate-bounce">
             {notification}
@@ -453,7 +394,7 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
       <CardFooter className="border-t pt-4 sm:pt-6">
         <div className="w-full grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
           <div>Round: {currentRound + 1}</div>
-          <div className="text-center hidden sm:block">Total Rounds: {maxRound}</div>
+          <div className="text-center hidden sm:block">Total Rounds: {lastRound}</div>
           <div className="text-right col-span-1 sm:col-span-1">
             {game.highestWins ? "Highest Wins" : "Lowest Wins"}
           </div>
