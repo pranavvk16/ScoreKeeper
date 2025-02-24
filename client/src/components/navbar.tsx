@@ -25,7 +25,7 @@ export function Navbar() {
                 <span>Games</span>
               </a>
             </Link>
-            {/* <Link href="/leaderboard">
+            <Link href="/leaderboard">
               <a className="flex items-center space-x-1 text-sm font-medium">
                 <Trophy className="h-4 w-4" />
                 <span>Leaderboard</span>
@@ -37,7 +37,7 @@ export function Navbar() {
                 <span>Profile</span>
               </a>
             </Link>
-            <UserPreferences /> */}
+            <UserPreferences />
             <ThemeToggle />
           </div>
         </div>

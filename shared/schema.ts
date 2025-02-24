@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -8,16 +8,20 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   gamesPlayed: integer("games_played").default(0),
   gamesWon: integer("games_won").default(0),
+  achievements: jsonb("achievements").default([]).notNull(),
+  stats: jsonb("stats").default({}).notNull(),
 });
 
 export const games = pgTable("games", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(), // Added unique constraint
+  name: text("name").notNull().unique(),
   description: text("description").notNull(),
   maxPlayers: integer("max_players").notNull(),
   minPlayers: integer("min_players").notNull(),
   highestWins: boolean("highest_wins").notNull(),
   isCustom: boolean("is_custom").default(false),
+  roundBased: boolean("round_based").default(true).notNull(),
+  achievements: jsonb("achievements").default([]).notNull(),
 });
 
 export const gameSessions = pgTable("game_sessions", {
@@ -26,6 +30,7 @@ export const gameSessions = pgTable("game_sessions", {
   startTime: timestamp("start_time").defaultNow().notNull(),
   endTime: timestamp("end_time"),
   isComplete: boolean("is_complete").default(false),
+  performance: jsonb("performance").default({}).notNull(),
 });
 
 export const scores = pgTable("scores", {
@@ -34,6 +39,7 @@ export const scores = pgTable("scores", {
   playerId: integer("player_id").notNull(),
   score: integer("score").notNull(),
   round: integer("round").notNull(),
+  roundStats: jsonb("round_stats").default({}).notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
