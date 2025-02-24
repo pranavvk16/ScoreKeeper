@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Trophy, Medal, Share2, Home, RotateCcw } from "lucide-react";
 import { type Game } from "@shared/schema";
 import { useLocation } from "wouter";
-import { Trophy3D } from "./trophy-3d";
 
 interface Player {
   id: number;
@@ -30,7 +29,7 @@ export function GameOver({ game, players, onPlayAgain }: GameOverProps) {
     const text = `I just finished a game of ${game.name}!\n` +
       `Winner: ${winner.name} with ${winner.total} points\n` +
       `Play now at ${window.location.origin}`;
-
+    
     if (navigator.share) {
       try {
         await navigator.share({
@@ -54,7 +53,7 @@ export function GameOver({ game, players, onPlayAgain }: GameOverProps) {
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
           <CardTitle className="flex flex-col items-center gap-4">
-            <Trophy3D />
+            <Trophy className="h-16 w-16 text-yellow-500" />
             <div className="space-y-1">
               <h2 className="text-3xl font-bold">Game Over!</h2>
               <p className="text-muted-foreground">{game.name}</p>
@@ -65,18 +64,9 @@ export function GameOver({ game, players, onPlayAgain }: GameOverProps) {
           <div className="space-y-6">
             <div className="text-center space-y-2">
               <h3 className="text-xl font-semibold">Winner</h3>
-              <motion.div 
-                initial={{ scale: 0.5 }}
-                animate={{ scale: 1 }}
-                transition={{ 
-                  type: "spring",
-                  stiffness: 260,
-                  damping: 20 
-                }}
-                className="text-2xl font-bold text-primary"
-              >
+              <div className="text-2xl font-bold text-primary">
                 {winner.name}
-              </motion.div>
+              </div>
               <div className="text-muted-foreground">
                 Score: {winner.total}
               </div>
@@ -85,11 +75,8 @@ export function GameOver({ game, players, onPlayAgain }: GameOverProps) {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Final Rankings</h3>
               {sortedPlayers.map((player, index) => (
-                <motion.div 
+                <div 
                   key={player.id}
-                  initial={{ x: -50, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: index * 0.1 }}
                   className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
                 >
                   <div className="flex items-center gap-3">
@@ -101,15 +88,8 @@ export function GameOver({ game, players, onPlayAgain }: GameOverProps) {
                     </div>
                     <span className="font-medium">{player.name}</span>
                   </div>
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: index * 0.2 }}
-                    className="font-bold"
-                  >
-                    {player.total}
-                  </motion.div>
-                </motion.div>
+                  <div className="font-bold">{player.total}</div>
+                </div>
               ))}
             </div>
           </div>
