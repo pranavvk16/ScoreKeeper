@@ -1,15 +1,40 @@
 import { useState, useEffect, useMemo } from "react";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Trophy, ChevronRight, ChevronLeft, Star, Crown, 
-  Undo2, Redo2, Plus, Minus, RotateCcw, TrendingUp,
-  Info, HelpCircle, Target, Sparkles, AlertTriangle
+import {
+  Trophy,
+  ChevronRight,
+  ChevronLeft,
+  Star,
+  Crown,
+  Undo2,
+  Redo2,
+  Plus,
+  Minus,
+  RotateCcw,
+  TrendingUp,
+  Info,
+  HelpCircle,
+  Target,
+  Sparkles,
+  AlertTriangle,
 } from "lucide-react";
 import { type Game } from "@shared/schema";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,7 +51,7 @@ interface ScoreAction {
   playerId: number;
   score: number;
   round: number;
-  type: 'regular' | 'penalty' | 'bonus';
+  type: "regular" | "penalty" | "bonus";
 }
 
 interface ScoreBoardProps {
@@ -47,29 +72,42 @@ const funFacts = [
 ];
 
 const gameGuides = {
-  "Poker": "https://www.wikihow.com/Play-Poker",
-  "Chess": "https://www.wikihow.com/Play-Chess",
-  "Monopoly": "https://www.wikihow.com/Play-Monopoly",
+  Poker: "https://www.wikihow.com/Play-Poker",
+  Chess: "https://www.wikihow.com/Play-Chess",
+  Monopoly: "https://www.wikihow.com/Play-Monopoly",
 };
 
 // Create a dynamic form schema based on players
 const createRoundFormSchema = (players: Player[], scoreLimit?: number) => {
-  const playerScores = players.reduce((acc, player) => {
-    acc[`player_${player.id}`] = z.number()
-      .min(-1000, "Score too low!")
-      .max(scoreLimit || 1000, `Score cannot exceed ${scoreLimit || 1000}`);
-    return acc;
-  }, {} as Record<string, z.ZodNumber>);
+  const playerScores = players.reduce(
+    (acc, player) => {
+      acc[`player_${player.id}`] = z
+        .number()
+        .min(-1000, "Score too low!")
+        .max(scoreLimit || 1000, `Score cannot exceed ${scoreLimit || 1000}`);
+      return acc;
+    },
+    {} as Record<string, z.ZodNumber>,
+  );
 
   return z.object(playerScores);
 };
 
-export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGame, scoreLimit }: ScoreBoardProps) {
+export function ScoreBoard({
+  game,
+  players,
+  onScoreSubmit,
+  onEndGame,
+  onResetGame,
+  scoreLimit,
+}: ScoreBoardProps) {
   const [currentRound, setCurrentRound] = useState(0);
   const [scoreHistory, setScoreHistory] = useState<ScoreAction[]>([]);
   const [undoHistory, setUndoHistory] = useState<ScoreAction[]>([]);
-  const [scoreType, setScoreType] = useState<'regular' | 'penalty' | 'bonus'>('regular');
-  const [notification, setNotification] = useState('');
+  const [scoreType, setScoreType] = useState<"regular" | "penalty" | "bonus">(
+    "regular",
+  );
+  const [notification, setNotification] = useState("");
   const [lastRound, setLastRound] = useState(0);
   const [showStats, setShowStats] = useState(false);
   const [currentFunFact, setCurrentFunFact] = useState(funFacts[0]);
@@ -79,18 +117,24 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
 
   const form = useForm({
     resolver: zodResolver(roundFormSchema),
-    defaultValues: players.reduce((acc, player) => {
-      acc[`player_${player.id}`] = 0;
-      return acc;
-    }, {} as Record<string, number>),
+    defaultValues: players.reduce(
+      (acc, player) => {
+        acc[`player_${player.id}`] = 0;
+        return acc;
+      },
+      {} as Record<string, number>,
+    ),
   });
 
   useEffect(() => {
-    const maxRoundInScores = Math.max(...players.map(p => p.scores.length), 0);
+    const maxRoundInScores = Math.max(
+      ...players.map((p) => p.scores.length),
+      0,
+    );
     setLastRound(maxRoundInScores);
 
     const interval = setInterval(() => {
-      setCurrentFunFact(prev => {
+      setCurrentFunFact((prev) => {
         const nextIndex = (funFacts.indexOf(prev) + 1) % funFacts.length;
         return funFacts[nextIndex];
       });
@@ -100,23 +144,24 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
   }, [players]);
 
   const sortedPlayers = [...players].sort((a, b) =>
-    game.highestWins ? b.total - a.total : a.total - b.total
+    game.highestWins ? b.total - a.total : a.total - b.total,
   );
 
   const winPrediction = useMemo(() => {
     if (players.length < 2 || !players[0].scores.length) return null;
 
-    const predictions = players.map(player => {
+    const predictions = players.map((player) => {
       const recentScores = player.scores.slice(-3);
-      const trend = recentScores.length > 1 
-        ? recentScores.reduce((a, b) => b - a) / recentScores.length
-        : 0;
+      const trend =
+        recentScores.length > 1
+          ? recentScores.reduce((a, b) => b - a) / recentScores.length
+          : 0;
 
       return {
         name: player.name,
         total: player.total,
         trend,
-        winChance: (player.total * 0.7) + (trend * 0.3),
+        winChance: player.total * 0.7 + trend * 0.3,
       };
     });
 
@@ -124,19 +169,31 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
   }, [players]);
 
   const playerStats = useMemo(() => {
-    return players.map(player => ({
+    return players.map((player) => ({
       id: player.id,
       name: player.name,
-      avgScore: player.scores.length ? 
-        (player.scores.reduce((a, b) => a + b, 0) / player.scores.length).toFixed(1) : '0',
+      avgScore: player.scores.length
+        ? (
+            player.scores.reduce((a, b) => a + b, 0) / player.scores.length
+          ).toFixed(1)
+        : "0",
       highestScore: player.scores.length ? Math.max(...player.scores) : 0,
       lowestScore: player.scores.length ? Math.min(...player.scores) : 0,
-      trend: player.scores.length > 1 ? 
-        player.scores[player.scores.length - 1] > player.scores[player.scores.length - 2] ? 'up' : 'down' 
-        : 'neutral',
-      consistency: player.scores.length > 1 ?
-        Math.abs(1 - (Math.max(...player.scores) - Math.min(...player.scores)) / player.total) * 100
-        : 100
+      trend:
+        player.scores.length > 1
+          ? player.scores[player.scores.length - 1] >
+            player.scores[player.scores.length - 2]
+            ? "up"
+            : "down"
+          : "neutral",
+      consistency:
+        player.scores.length > 1
+          ? Math.abs(
+              1 -
+                (Math.max(...player.scores) - Math.min(...player.scores)) /
+                  player.total,
+            ) * 100
+          : 100,
     }));
   }, [players]);
 
@@ -144,20 +201,20 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
     const newScores: ScoreAction[] = [];
 
     Object.entries(formData).forEach(([key, score]) => {
-      const playerId = parseInt(key.split('_')[1]);
-      const finalScore = scoreType === 'penalty' ? -Math.abs(score) : score;
+      const playerId = parseInt(key.split("_")[1]);
+      const finalScore = scoreType === "penalty" ? -Math.abs(score) : score;
 
       newScores.push({
         playerId,
         score: finalScore,
         round: currentRound,
-        type: scoreType
+        type: scoreType,
       });
 
       onScoreSubmit(playerId, finalScore);
     });
 
-    setScoreHistory(prev => [...prev, ...newScores]);
+    setScoreHistory((prev) => [...prev, ...newScores]);
     setUndoHistory([]);
     form.reset();
 
@@ -169,7 +226,7 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
       setNotification("A round of zeros? Tough crowd! 🎲");
     }
 
-    setCurrentRound(prev => prev + 1);
+    setCurrentRound((prev) => prev + 1);
     showRoundWinner(currentRound);
   };
 
@@ -177,8 +234,8 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
     if (scoreHistory.length === 0) return;
 
     const lastAction = scoreHistory[scoreHistory.length - 1];
-    setScoreHistory(prev => prev.slice(0, -1));
-    setUndoHistory(prev => [...prev, lastAction]);
+    setScoreHistory((prev) => prev.slice(0, -1));
+    setUndoHistory((prev) => [...prev, lastAction]);
 
     onScoreSubmit(lastAction.playerId, -lastAction.score);
   };
@@ -187,8 +244,8 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
     if (undoHistory.length === 0) return;
 
     const lastUndo = undoHistory[undoHistory.length - 1];
-    setUndoHistory(prev => prev.slice(0, -1));
-    setScoreHistory(prev => [...prev, lastUndo]);
+    setUndoHistory((prev) => prev.slice(0, -1));
+    setScoreHistory((prev) => [...prev, lastUndo]);
 
     onScoreSubmit(lastUndo.playerId, lastUndo.score);
   };
@@ -198,7 +255,7 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
       setCurrentRound(0);
       setScoreHistory([]);
       setUndoHistory([]);
-      setNotification('');
+      setNotification("");
       form.reset();
       onResetGame();
     }
@@ -228,11 +285,7 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
             </Button>
             <Dialog>
               <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  title="View Statistics"
-                >
+                <Button variant="outline" size="icon" title="View Statistics">
                   <TrendingUp className="h-4 w-4" />
                 </Button>
               </DialogTrigger>
@@ -242,7 +295,7 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
                 </DialogHeader>
                 <ScrollArea className="h-[300px]">
                   <div className="space-y-4">
-                    {playerStats.map(stat => (
+                    {playerStats.map((stat) => (
                       <div key={stat.id} className="p-4 bg-muted/50 rounded-lg">
                         <h3 className="font-medium">{stat.name}</h3>
                         <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
@@ -268,9 +321,9 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
             </Button>
           </div>
           {gameGuides[game.name] && (
-            <a 
-              href={gameGuides[game.name]} 
-              target="_blank" 
+            <a
+              href={gameGuides[game.name]}
+              target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-primary hover:underline flex items-center gap-1"
             >
@@ -305,23 +358,23 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
 
         <div className="mb-4 flex flex-wrap justify-center gap-2">
           <Button
-            variant={scoreType === 'regular' ? 'default' : 'outline'}
-            onClick={() => setScoreType('regular')}
+            variant={scoreType === "regular" ? "default" : "outline"}
+            onClick={() => setScoreType("regular")}
             className="w-24 text-sm"
           >
             Regular
           </Button>
           <Button
-            variant={scoreType === 'penalty' ? 'default' : 'outline'}
-            onClick={() => setScoreType('penalty')}
+            variant={scoreType === "penalty" ? "default" : "outline"}
+            onClick={() => setScoreType("penalty")}
             className="w-24 text-sm"
           >
             <Minus className="h-4 w-4 mr-1" />
             Penalty
           </Button>
           <Button
-            variant={scoreType === 'bonus' ? 'default' : 'outline'}
-            onClick={() => setScoreType('bonus')}
+            variant={scoreType === "bonus" ? "default" : "outline"}
+            onClick={() => setScoreType("bonus")}
             className="w-24 text-sm"
           >
             <Plus className="h-4 w-4 mr-1" />
@@ -334,18 +387,26 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
             <div
               key={player.id}
               className={`flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 rounded-lg transition-colors ${
-                index === 0 ? 'bg-yellow-100 dark:bg-yellow-900/20' :
-                  index === 1 ? 'bg-gray-100 dark:bg-gray-800/50' :
-                    index === 2 ? 'bg-amber-100 dark:bg-amber-900/20' :
-                      'bg-muted/50'
+                index === 0
+                  ? "bg-yellow-100 dark:bg-yellow-900/20"
+                  : index === 1
+                    ? "bg-gray-100 dark:bg-gray-800/50"
+                    : index === 2
+                      ? "bg-amber-100 dark:bg-amber-900/20"
+                      : "bg-muted/50"
               }`}
             >
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <div className="w-8 flex justify-center">
-                  {index === 0 ? <Crown className="h-6 w-6 text-yellow-500" /> :
-                    index === 1 ? <Star className="h-6 w-6 text-gray-400" /> :
-                      index === 2 ? <Star className="h-6 w-6 text-amber-700" /> :
-                        <span className="text-lg font-bold">{index + 1}</span>}
+                  {index === 0 ? (
+                    <Crown className="h-6 w-6 text-yellow-500" />
+                  ) : index === 1 ? (
+                    <Star className="h-6 w-6 text-gray-400" />
+                  ) : index === 2 ? (
+                    <Star className="h-6 w-6 text-amber-700" />
+                  ) : (
+                    <span className="text-lg font-bold">{index + 1}</span>
+                  )}
                 </div>
                 <div className="flex-1">
                   <div className="font-medium">{player.name}</div>
@@ -359,10 +420,15 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
                   <Input
                     type="number"
                     placeholder="Score"
-                    {...form.register(`player_${player.id}`, { valueAsNumber: true })}
+                    {...form.register(`player_${player.id}`, {
+                      valueAsNumber: true,
+                    })}
                     className={`w-20 sm:w-24 ${
-                      scoreType === 'penalty' ? 'border-red-500' :
-                        scoreType === 'bonus' ? 'border-green-500' : ''
+                      scoreType === "penalty"
+                        ? "border-red-500"
+                        : scoreType === "bonus"
+                          ? "border-green-500"
+                          : ""
                     }`}
                   />
                 </div>
@@ -375,8 +441,8 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
           ))}
 
           <div className="flex justify-center mt-6">
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               size="lg"
               className="bg-green-600 hover:bg-green-700 text-white font-bold"
             >
@@ -394,7 +460,9 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
       <CardFooter className="border-t pt-4 sm:pt-6">
         <div className="w-full grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
           <div>Round: {currentRound + 1}</div>
-          <div className="text-center hidden sm:block">Total Rounds: {lastRound}</div>
+          <div className="text-center hidden sm:block">
+            Total Rounds: {lastRound}
+          </div>
           <div className="text-right col-span-1 sm:col-span-1">
             {game.highestWins ? "Highest Wins" : "Lowest Wins"}
           </div>
