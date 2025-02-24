@@ -47,11 +47,12 @@ const getScoreMessage = (score: number, highestWins: boolean) => {
   if (highestWins) {
     if (score > 50) return { icon: <PartyPopper className="h-5 w-5" />, message: "Wow! Someone's showing off! 🎉" };
     if (score < 10) return { icon: <Frown className="h-5 w-5" />, message: "Better luck next time! 😅" };
+    return { icon: <Smile className="h-5 w-5" />, message: "Not bad, keep pushing! 💪" };
   } else {
     if (score < 5) return { icon: <Medal className="h-5 w-5" />, message: "Now that's efficiency! 🏆" };
     if (score > 30) return { icon: <Zap className="h-5 w-5" />, message: "Ouch! That's gonna leave a mark! ⚡" };
+    return { icon: <Smile className="h-5 w-5" />, message: "Steady as she goes! 🎯" };
   }
-  return { icon: <Smile className="h-5 w-5" />, message: "Not bad, not bad at all! 👍" };
 };
 
 export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGame }: ScoreBoardProps) {
@@ -89,6 +90,15 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
         Math.sqrt(scores.reduce((acc, score) => acc + Math.pow(score - avg, 2), 0) / scores.length)
         : 0;
 
+      const roundProgress = scores.map((score, idx) => {
+        const prevScore = idx > 0 ? scores[idx - 1] : score;
+        return {
+          round: idx + 1,
+          score,
+          change: idx > 0 ? ((score - prevScore) / prevScore) * 100 : 0
+        };
+      });
+
       return {
         id: player.id,
         name: player.name,
@@ -99,7 +109,14 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
         consistency: consistency.toFixed(1),
         roundsPlayed: scores.length,
         bestRound: scores.length ? scores.indexOf(Math.max(...scores)) + 1 : 0,
-        worstRound: scores.length ? scores.indexOf(Math.min(...scores)) + 1 : 0
+        worstRound: scores.length ? scores.indexOf(Math.min(...scores)) + 1 : 0,
+        roundProgress,
+        recentPerformance: scores.slice(-3),
+        improvementRate: trend === 'improving' ? 
+          ((scores[scores.length - 1] - scores[scores.length - 2]) / scores[scores.length - 2] * 100).toFixed(1) + '%' : 
+          trend === 'declining' ? 
+          ((scores[scores.length - 2] - scores[scores.length - 1]) / scores[scores.length - 2] * 100).toFixed(1) + '%' : 
+          '0%'
       };
     });
   }, [players]);
@@ -212,12 +229,49 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGam
                         }`} />
                       </h3>
                       <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
-                        <div>Average Score: {stat.avgScore}</div>
-                        <div>Consistency: {stat.consistency}</div>
-                        <div>Best Round: #{stat.bestRound}</div>
-                        <div>Worst Round: #{stat.worstRound}</div>
-                        <div>Highest: {stat.highestScore}</div>
-                        <div>Lowest: {stat.lowestScore}</div>
+                        <div className="flex items-center gap-1">
+                          <Trophy className="h-4 w-4 text-primary" />
+                          <span>Avg: {stat.avgScore}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Zap className="h-4 w-4 text-amber-500" />
+                          <span>Consistency: {stat.consistency}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 text-yellow-500" />
+                          <span>Best: Round {stat.bestRound}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Frown className="h-4 w-4 text-red-500" />
+                          <span>Worst: Round {stat.worstRound}</span>
+                        </div>
+                        <div className="col-span-2">
+                          <div className="text-xs text-muted-foreground mt-2">Recent Performance:</div>
+                          <div className="flex items-center gap-2 mt-1">
+                            {stat.recentPerformance.map((score, idx) => (
+                              <div
+                                key={idx}
+                                className={`px-2 py-1 rounded ${
+                                  idx === stat.recentPerformance.length - 1 ?
+                                    'bg-primary text-primary-foreground' :
+                                    'bg-muted'
+                                }`}
+                              >
+                                {score}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="col-span-2">
+                          <div className="text-xs text-muted-foreground">Improvement Rate:</div>
+                          <div className={`font-medium ${
+                            stat.trend === 'improving' ? 'text-green-500' :
+                            stat.trend === 'declining' ? 'text-red-500' :
+                            'text-yellow-500'
+                          }`}>
+                            {stat.improvementRate}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
