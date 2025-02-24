@@ -37,12 +37,11 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
   const [lastRound, setLastRound] = useState(0);
 
   useEffect(() => {
-    // Update last round when new scores are added
     const maxRoundInScores = Math.max(...players.map(p => p.scores.length), 0);
     setLastRound(maxRoundInScores);
   }, [players]);
 
-  const sortedPlayers = [...players].sort((a, b) => 
+  const sortedPlayers = [...players].sort((a, b) =>
     game.highestWins ? b.total - a.total : a.total - b.total
   );
 
@@ -59,11 +58,10 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
 
       onScoreSubmit(playerId, finalScore);
       setScoreHistory(prev => [...prev, action]);
-      setUndoHistory([]); // Clear redo history on new action
+      setUndoHistory([]);
       setNewScores(prev => ({ ...prev, [playerId]: "" }));
 
-      // Check if all players have submitted scores for current round
-      const allScoresSubmitted = players.every(p => 
+      const allScoresSubmitted = players.every(p =>
         p.scores.length > currentRound || p.id === playerId
       );
       if (allScoresSubmitted) {
@@ -80,7 +78,6 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
     setScoreHistory(prev => prev.slice(0, -1));
     setUndoHistory(prev => [...prev, lastAction]);
 
-    // Reverse the last score
     onScoreSubmit(lastAction.playerId, -lastAction.score);
   };
 
@@ -91,35 +88,30 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
     setUndoHistory(prev => prev.slice(0, -1));
     setScoreHistory(prev => [...prev, lastUndo]);
 
-    // Reapply the score
     onScoreSubmit(lastUndo.playerId, lastUndo.score);
   };
 
   const maxRound = Math.max(...players.map(p => p.scores.length), 0);
-  const canGoNext = currentRound < maxRound -1 ;
+  const canGoNext = currentRound < maxRound - 1;
   const canGoPrev = currentRound > 0;
 
-  // Calculate progress for current round
   const playersWithScores = players.filter(p => p.scores[currentRound] !== undefined).length;
   const roundProgress = (playersWithScores / players.length) * 100;
 
   const showRoundWinner = (round: number) => {
-    // Implement logic to determine and display the round winner with animation
-    //  This is a placeholder, replace with actual logic.
-    const winner = sortedPlayers[0].name; // Replace with actual winner determination
+    const winner = sortedPlayers[0].name;
     setNotification(`Round ${round + 1} Winner: ${winner}!`);
   };
-
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Trophy className="h-6 w-6 text-primary" />
             <span>Round {currentRound + 1}</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-4">
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -142,35 +134,36 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    setCurrentRound(r => Math.max(0, r - 1));
-                    showRoundWinner(currentRound -1);
-                  }}
-                  disabled={!canGoPrev}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-              <div className="w-32">
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  setCurrentRound(r => Math.max(0, r - 1));
+                  showRoundWinner(currentRound - 1);
+                }}
+                disabled={!canGoPrev}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="w-20 sm:w-32">
                 <Progress value={roundProgress} className="h-2" />
               </div>
               <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    setCurrentRound(r => Math.min(lastRound, r + 1));
-                    showRoundWinner(currentRound);
-                  }}
-                  disabled={!canGoNext || currentRound >= lastRound}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  setCurrentRound(r => Math.min(lastRound, r + 1));
+                  showRoundWinner(currentRound);
+                }}
+                disabled={!canGoNext || currentRound >= lastRound}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={onEndGame}
               className="bg-red-500 hover:bg-red-600"
+              size="sm"
             >
               End Game
             </Button>
@@ -178,84 +171,89 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 flex justify-center gap-2">
+        <div className="mb-4 flex flex-wrap justify-center gap-2">
           <Button
             variant={scoreType === 'regular' ? 'default' : 'outline'}
             onClick={() => setScoreType('regular')}
-            className="w-24"
+            className="w-24 text-sm"
           >
             Regular
           </Button>
           <Button
             variant={scoreType === 'penalty' ? 'default' : 'outline'}
             onClick={() => setScoreType('penalty')}
-            className="w-24"
+            className="w-24 text-sm"
           >
-            <Minus className="h-4 w-4 mr-2" />
+            <Minus className="h-4 w-4 mr-1" />
             Penalty
           </Button>
           <Button
             variant={scoreType === 'bonus' ? 'default' : 'outline'}
             onClick={() => setScoreType('bonus')}
-            className="w-24"
+            className="w-24 text-sm"
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4 mr-1" />
             Bonus
           </Button>
         </div>
 
         <div className="space-y-4">
           {sortedPlayers.map((player, index) => (
-            <div 
-              key={player.id} 
-              className={`flex items-center space-x-4 p-4 rounded-lg transition-colors ${
-                index === 0 ? 'bg-yellow-100 dark:bg-yellow-900/20' : 
-                index === 1 ? 'bg-gray-100 dark:bg-gray-800/50' :
-                index === 2 ? 'bg-amber-100 dark:bg-amber-900/20' :
-                'bg-muted/50'
+            <div
+              key={player.id}
+              className={`flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 rounded-lg transition-colors ${
+                index === 0 ? 'bg-yellow-100 dark:bg-yellow-900/20' :
+                  index === 1 ? 'bg-gray-100 dark:bg-gray-800/50' :
+                    index === 2 ? 'bg-amber-100 dark:bg-amber-900/20' :
+                      'bg-muted/50'
               }`}
             >
-              <div className="w-8 flex justify-center">
-                {index === 0 ? <Crown className="h-6 w-6 text-yellow-500" /> :
-                 index === 1 ? <Star className="h-6 w-6 text-gray-400" /> :
-                 index === 2 ? <Star className="h-6 w-6 text-amber-700" /> :
-                 <span className="text-lg font-bold">{index + 1}</span>}
-              </div>
-              <div className="flex-1">
-                <div className="font-medium">{player.name}</div>
-                <div className="text-sm text-muted-foreground">
-                  Previous rounds: {player.scores.slice(0, currentRound).join(", ")}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="w-8 flex justify-center">
+                  {index === 0 ? <Crown className="h-6 w-6 text-yellow-500" /> :
+                    index === 1 ? <Star className="h-6 w-6 text-gray-400" /> :
+                      index === 2 ? <Star className="h-6 w-6 text-amber-700" /> :
+                        <span className="text-lg font-bold">{index + 1}</span>}
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium">{player.name}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">
+                    Previous: {player.scores.slice(0, currentRound).join(", ")}
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <Input
-                  type="number"
-                  placeholder="Score"
-                  value={newScores[player.id] || ""}
-                  onChange={(e) => setNewScores(prev => ({ 
-                    ...prev, 
-                    [player.id]: e.target.value 
-                  }))}
-                  className={`w-24 ${
-                    scoreType === 'penalty' ? 'border-red-500' :
-                    scoreType === 'bonus' ? 'border-green-500' : ''
-                  }`}
-                  disabled={player.scores.length > currentRound}
-                />
-                <Button
-                  variant="outline"
-                  onClick={() => handleScoreSubmit(player.id)}
-                  disabled={player.scores.length > currentRound}
-                  className={
-                    scoreType === 'penalty' ? 'text-red-500 hover:text-red-600' :
-                    scoreType === 'bonus' ? 'text-green-500 hover:text-green-600' : ''
-                  }
-                >
-                  Add
-                </Button>
-                <div className="w-24 text-right">
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Score"
+                    value={newScores[player.id] || ""}
+                    onChange={(e) => setNewScores(prev => ({
+                      ...prev,
+                      [player.id]: e.target.value
+                    }))}
+                    className={`w-20 sm:w-24 ${
+                      scoreType === 'penalty' ? 'border-red-500' :
+                        scoreType === 'bonus' ? 'border-green-500' : ''
+                    }`}
+                    disabled={player.scores.length > currentRound}
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => handleScoreSubmit(player.id)}
+                    disabled={player.scores.length > currentRound}
+                    className={`px-3 ${
+                      scoreType === 'penalty' ? 'text-red-500 hover:text-red-600' :
+                        scoreType === 'bonus' ? 'text-green-500 hover:text-green-600' : ''
+                    }`}
+                    size="sm"
+                  >
+                    Add
+                  </Button>
+                </div>
+                <div className="text-right">
                   <div className="font-bold">{player.total}</div>
-                  <div className="text-xs text-muted-foreground">Total Score</div>
+                  <div className="text-xs text-muted-foreground">Total</div>
                 </div>
               </div>
             </div>
@@ -267,12 +265,12 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
           </div>
         )}
       </CardContent>
-      <CardFooter className="border-t pt-6">
-        <div className="w-full grid grid-cols-3 gap-4 text-sm text-muted-foreground">
-          <div>Current Round: {currentRound + 1}</div>
-          <div className="text-center">Total Rounds: {maxRound}</div>
-          <div className="text-right">
-            {game.highestWins ? "Highest Score Wins" : "Lowest Score Wins"}
+      <CardFooter className="border-t pt-4 sm:pt-6">
+        <div className="w-full grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+          <div>Round: {currentRound + 1}</div>
+          <div className="text-center hidden sm:block">Total Rounds: {maxRound}</div>
+          <div className="text-right col-span-1 sm:col-span-1">
+            {game.highestWins ? "Highest Wins" : "Lowest Wins"}
           </div>
         </div>
       </CardFooter>
