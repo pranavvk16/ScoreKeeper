@@ -12,7 +12,7 @@ export const users = pgTable("users", {
 
 export const games = pgTable("games", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
+  name: text("name").notNull().unique(), // Added unique constraint
   description: text("description").notNull(),
   maxPlayers: integer("max_players").notNull(),
   minPlayers: integer("min_players").notNull(),

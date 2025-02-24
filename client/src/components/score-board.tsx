@@ -39,6 +39,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { gameResources } from "@/lib/game-resources";
 
 interface Player {
   id: number;
@@ -71,12 +72,6 @@ const funFacts = [
   "Plot twist: The real winner is friendship... just kidding, crush them! 😈",
 ];
 
-const gameGuides = {
-  Poker: "https://www.wikihow.com/Play-Poker",
-  Chess: "https://www.wikihow.com/Play-Chess",
-  Monopoly: "https://www.wikihow.com/Play-Monopoly",
-};
-
 // Create a dynamic form schema based on players
 const createRoundFormSchema = (players: Player[], scoreLimit?: number) => {
   const playerScores = players.reduce(
@@ -92,6 +87,11 @@ const createRoundFormSchema = (players: Player[], scoreLimit?: number) => {
 
   return z.object(playerScores);
 };
+
+// Add type guard
+function isValidGameName(name: string): name is keyof typeof gameResources {
+  return name in gameResources;
+}
 
 export function ScoreBoard({
   game,
@@ -320,9 +320,9 @@ export function ScoreBoard({
               End Game
             </Button>
           </div>
-          {gameGuides[game.name] && (
+          {isValidGameName(game.name) && gameResources[game.name] && (
             <a
-              href={gameGuides[game.name]}
+              href={gameResources[game.name].wikihow}
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-primary hover:underline flex items-center gap-1"
