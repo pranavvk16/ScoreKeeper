@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trophy, ChevronRight, ChevronLeft, Star, Crown, Undo2, Redo2, Plus, Minus } from "lucide-react";
+import { Trophy, ChevronRight, ChevronLeft, Star, Crown, Undo2, Redo2, Plus, Minus, RotateCcw, TrendingUp, Filter } from "lucide-react";
 import { type Game } from "@shared/schema";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Player {
   id: number;
@@ -25,9 +27,10 @@ interface ScoreBoardProps {
   players: Player[];
   onScoreSubmit: (playerId: number, score: number) => void;
   onEndGame: () => void;
+  onResetGame?: () => void;
 }
 
-export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoardProps) {
+export function ScoreBoard({ game, players, onScoreSubmit, onEndGame, onResetGame }: ScoreBoardProps) {
   const [newScores, setNewScores] = useState<Record<number, string>>({});
   const [currentRound, setCurrentRound] = useState(0);
   const [scoreHistory, setScoreHistory] = useState<ScoreAction[]>([]);
@@ -35,6 +38,8 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
   const [scoreType, setScoreType] = useState<'regular' | 'penalty' | 'bonus'>('regular');
   const [notification, setNotification] = useState('');
   const [lastRound, setLastRound] = useState(0);
+  const [scoreFilter, setScoreFilter] = useState<'all' | 'regular' | 'penalty' | 'bonus'>('all');
+  const [showStats, setShowStats] = useState(false);
 
   useEffect(() => {
     const maxRoundInScores = Math.max(...players.map(p => p.scores.length), 0);
@@ -44,6 +49,28 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
   const sortedPlayers = [...players].sort((a, b) =>
     game.highestWins ? b.total - a.total : a.total - b.total
   );
+
+  // New feature: Calculate player statistics
+  const playerStats = useMemo(() => {
+    return players.map(player => ({
+      id: player.id,
+      name: player.name,
+      avgScore: player.scores.length ? 
+        (player.scores.reduce((a, b) => a + b, 0) / player.scores.length).toFixed(1) : '0',
+      highestScore: player.scores.length ? Math.max(...player.scores) : 0,
+      lowestScore: player.scores.length ? Math.min(...player.scores) : 0,
+      trend: player.scores.length > 1 ? 
+        player.scores[player.scores.length - 1] > player.scores[player.scores.length - 2] ? 'up' : 'down' 
+        : 'neutral'
+    }));
+  }, [players]);
+
+  // New feature: Filter scores by type
+  const filteredScoreHistory = useMemo(() => {
+    return scoreHistory.filter(action => 
+      scoreFilter === 'all' ? true : action.type === scoreFilter
+    );
+  }, [scoreHistory, scoreFilter]);
 
   const handleScoreSubmit = (playerId: number) => {
     const score = Number(newScores[playerId]);
@@ -91,6 +118,18 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
     onScoreSubmit(lastUndo.playerId, lastUndo.score);
   };
 
+  // New feature: Reset game function
+  const handleResetGame = () => {
+    if (onResetGame) {
+      setNewScores({});
+      setCurrentRound(0);
+      setScoreHistory([]);
+      setUndoHistory([]);
+      setNotification('');
+      onResetGame();
+    }
+  };
+
   const maxRound = Math.max(...players.map(p => p.scores.length), 0);
   const canGoNext = currentRound < maxRound - 1;
   const canGoPrev = currentRound > 0;
@@ -131,6 +170,14 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
               >
                 <Redo2 className="h-4 w-4" />
               </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleResetGame}
+                title="Reset game"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Button
@@ -157,6 +204,52 @@ export function ScoreBoard({ game, players, onScoreSubmit, onEndGame }: ScoreBoa
                 disabled={!canGoNext || currentRound >= lastRound}
               >
                 <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    title="View Statistics"
+                    onClick={() => setShowStats(true)}
+                  >
+                    <TrendingUp className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Player Statistics</DialogTitle>
+                  </DialogHeader>
+                  <ScrollArea className="h-[300px]">
+                    <div className="space-y-4">
+                      {playerStats.map(stat => (
+                        <div key={stat.id} className="p-4 bg-muted/50 rounded-lg">
+                          <h3 className="font-medium">{stat.name}</h3>
+                          <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
+                            <div>Average Score: {stat.avgScore}</div>
+                            <div>Highest Score: {stat.highestScore}</div>
+                            <div>Lowest Score: {stat.lowestScore}</div>
+                            <div>Trend: {stat.trend}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </DialogContent>
+              </Dialog>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setScoreFilter(current => 
+                  current === 'all' ? 'regular' : 
+                  current === 'regular' ? 'penalty' : 
+                  current === 'penalty' ? 'bonus' : 'all'
+                )}
+                title="Filter scores"
+              >
+                <Filter className="h-4 w-4" />
               </Button>
             </div>
             <Button
