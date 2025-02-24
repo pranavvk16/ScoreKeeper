@@ -1,20 +1,19 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF, Stage, PresentationControls } from '@react-three/drei';
-import * as THREE from 'three';
+import { Group } from 'three';
 
 function TrophyModel() {
-  const meshRef = useRef<THREE.Group>();
+  const groupRef = useRef<Group>(null);
 
-  useFrame((state: { clock: { elapsedTime: number } }) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y = state.clock.elapsedTime * 0.5;
+  useFrame((state) => {
+    if (groupRef.current) {
+      groupRef.current.rotation.y = state.clock.getElapsedTime() * 0.5;
     }
   });
 
-  // Trophy geometry
   return (
-    <group ref={meshRef}>
+    <group ref={groupRef}>
       {/* Base */}
       <mesh position={[0, -1.2, 0]}>
         <cylinderGeometry args={[0.5, 0.7, 0.2, 32]} />
@@ -50,10 +49,14 @@ export function Trophy3D() {
   return (
     <div className="w-full h-[300px]">
       <Canvas
+        gl={{ preserveDrawingBuffer: true }}
+        shadows
         dpr={[1, 2]}
         camera={{ position: [0, 0, 5], fov: 45 }}
         style={{ background: 'transparent' }}
       >
+        <ambientLight intensity={0.5} />
+        <pointLight position={[10, 10, 10]} />
         <PresentationControls
           global
           rotation={[0, -Math.PI / 4, 0]}
